@@ -1,0 +1,66 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+</div>
+
+<div>
+    @if (Model.PBCBytes != null)
+    {
+        <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.Original))" />
+
+        @if (Model.NormalizedBytes != null)
+        {
+            <p>Normalized:
+            <br />
+            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.NormalizedBytes))" /></p>
+        }
+        @if (Model.SoftenedBytes != null)
+        {
+            <p>
+                Softened: 
+            <br />
+            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.SoftenedBytes))" />
+            </p>
+        }
+        <p>
+            PBC: 
+            <br />
+            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
+        </p>
+        @if (Model.CleanedBytes != null)
+        {
+            <p>
+                Cleaned: 
+            <br />
+            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.CleanedBytes))" />
+            </p>
+        }
+        <p>
+            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.OutlineBytes))" />
+        </p>
+    }
+</div>
+<form enctype="multipart/form-data" method="post">
+    <dl>
+        <dt>
+            <label asp-for="FormFile"></label>
+        </dt>
+        <dd>
+            <input asp-for="FormFile" type="file">
+        </dd>
+    </dl>
+    Normalize:
+    <input type="checkbox" name="Normalize" id="Normalize" asp-for="Normalize" value="true" checked="@Model.Normalize" />
+    Soften:
+    <input type="checkbox" name="Soften" id="Soften" asp-for="Soften" value="true" checked="@Model.Soften" />
+    Clean:
+    <input type="checkbox" name="Clean" id="Clean" asp-for="Clean" value="true" checked="@Model.Clean" />
+    <br />
+    <input asp-page-handler="Upload" class="btn" type="submit" value="Upload" />
+</form>
