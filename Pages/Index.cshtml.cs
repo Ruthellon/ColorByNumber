@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using static System.Net.Mime.MediaTypeNames;
-using System.Drawing;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ColorByNumber.Pages
 {
@@ -49,7 +53,7 @@ namespace ColorByNumber.Pages
                     using (var memoryStream = new MemoryStream())
                     {
                         await FormFile.CopyToAsync(memoryStream);
-                        using (var img = System.Drawing.Image.FromStream(memoryStream))
+                        using (var img = Image.FromStream(memoryStream))
                         {
                             Original = (byte[])new ImageConverter().ConvertTo(img, typeof(byte[]));
 

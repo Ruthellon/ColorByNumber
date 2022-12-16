@@ -16,29 +16,21 @@
 
         @if (Model.NormalizedBytes != null)
         {
-            <p>Normalized:
-            <br />
-            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.NormalizedBytes))" /></p>
+            <p>Normalized: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.NormalizedBytes))" /></p>
         }
         @if (Model.SoftenedBytes != null)
         {
             <p>
-                Softened: 
-            <br />
-            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.SoftenedBytes))" />
+                Softened: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.SoftenedBytes))" />
             </p>
         }
         <p>
-            PBC: 
-            <br />
-            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
+            PBC: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
         </p>
         @if (Model.CleanedBytes != null)
         {
             <p>
-                Cleaned: 
-            <br />
-            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.CleanedBytes))" />
+                Cleaned: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.CleanedBytes))" />
             </p>
         }
         <p>
