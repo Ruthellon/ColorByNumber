@@ -17,11 +17,13 @@ namespace ColorByNumber.Pages
         public IFormFile FormFile { get; set; }
 
         [BindProperty]
-        public bool Normalize { get; set; } = true;
+        public bool Normalize { get; set; } = false;
         [BindProperty]
-        public bool Soften { get; set; } = true;
+        public bool Soften { get; set; } = false;
         [BindProperty]
-        public bool Clean { get; set; } = true;
+        public bool Clean { get; set; } = false;
+        [BindProperty]
+        public double SimilarityDistance { get; set; } = 28.0f;
 
         public byte[] Original { get; set; }
         public byte[] NormalizedBytes { get; set; }
@@ -29,6 +31,8 @@ namespace ColorByNumber.Pages
         public byte[] PBCBytes { get; set; }
         public byte[] CleanedBytes { get; set; }
         public byte[] OutlineBytes { get; set; }
+
+        public List<CIELab> TopColors { get; set; } = new List<CIELab>();
 
         private readonly ILogger<IndexModel> _logger;
 
@@ -46,7 +50,7 @@ namespace ColorByNumber.Pages
         {
             try
             {
-                if (FormFile.Length > 0)
+                if (FormFile != null && FormFile.Length > 0)
                 {
                     var filePath = Path.GetFullPath(FormFile.FileName);
 
@@ -58,7 +62,7 @@ namespace ColorByNumber.Pages
                             Original = (byte[])new ImageConverter().ConvertTo(img, typeof(byte[]));
 
                             //Bitmap image = new Bitmap(img, new Size(img.Width / 2, img.Height / 2));
-                            WorkingImage = new Bitmap(img);
+                            WorkingImage = new Bitmap(img, new Size(img.Width / 2, img.Height / 2));
 
                             if (Normalize)
                             {
@@ -122,6 +126,7 @@ namespace ColorByNumber.Pages
                     int green = Convert.ToInt32(Math.Round((double)colors.Sum(y => y.G) / (double)colors.Count));
                     int blue = Convert.ToInt32(Math.Round((double)colors.Sum(z => z.B) / (double)colors.Count));
 
+
                     WorkingImage.SetPixel(x, y, Color.FromArgb(red, green, blue));
                 }
             }
@@ -133,7 +138,7 @@ namespace ColorByNumber.Pages
             {
                 for (int x = 0; x < WorkingImage.Width; x++)
                 {
-                    WorkingImage.SetPixel(x, y, NormalizeColor(WorkingImage.GetPixel(x, y)));
+                    WorkingImage.SetPixel(x, y, NormalizeColor(WorkingImage.GetPixel(x, y), 10));
                 }
             }
         }
@@ -157,31 +162,16 @@ namespace ColorByNumber.Pages
                         }
                     }
 
-
-
                     if (colors.Where(z => z.Key == WorkingImage.GetPixel(x, y)).FirstOrDefault().Value < 9)
                     {
-                        double distance = Double.MaxValue;
-                        Color? newColor = null;
-                        var current = new CIELab(WorkingImage.GetPixel(x, y));
-                        foreach (var color in colors.OrderByDescending(z => z.Value))
+                        if (x > 0)
                         {
-                            if (newColor == null)
-                                newColor = color.Key;
-
-                            if (color.Value >= 9)
-                            {
-                                double d = DistanceBetweenColors(new CIELab(color.Key), current);
-
-                                if (d < distance)
-                                {
-                                    distance = d;
-                                    newColor = color.Key;
-                                }
-                            }
+                            WorkingImage.SetPixel(x, y, WorkingImage.GetPixel(x-1, y));
                         }
-
-                        WorkingImage.SetPixel(x, y, newColor.Value);
+                        else if (y > 0)
+                        {
+                            WorkingImage.SetPixel(x, y, WorkingImage.GetPixel(x, y-1));
+                        }
                     }
                 }
             }
@@ -205,7 +195,6 @@ namespace ColorByNumber.Pages
 
             var top = colorCount.OrderByDescending(a => a.Value).Select(b => b.Key).ToList();
 
-            List<CIELab> TopColors = new List<CIELab>();
 
             foreach (var color in top)
             {
@@ -213,7 +202,8 @@ namespace ColorByNumber.Pages
                 CIELab labColor = new CIELab(color);
                 for (int i = 0; i < TopColors.Count; i++)
                 {
-                    if (DistanceBetweenColors(labColor, TopColors[i]) < 28.0f)
+                    double distance = DistanceBetweenColors(labColor, TopColors[i]);
+                    if (distance < SimilarityDistance)
                     {
                         found = true;
                         break;
@@ -292,22 +282,22 @@ namespace ColorByNumber.Pages
             WorkingImage = outline;
         }
 
-        private Color NormalizeColor(Color pixel)
+        private Color NormalizeColor(Color pixel, double factor)
         {
             int red = pixel.R;
             int green = pixel.G;
             int blue = pixel.B;
 
-            red = Convert.ToInt32(Math.Round(((double)red / 10.0f)) * 10);
-            green = Convert.ToInt32(Math.Round(((double)green / 10.0f)) * 10);
-            blue = Convert.ToInt32(Math.Round(((double)blue / 10.0f)) * 10);
+            red = Convert.ToInt32(Math.Round(((double)red / factor)) * factor);
+            green = Convert.ToInt32(Math.Round(((double)green / factor)) * factor);
+            blue = Convert.ToInt32(Math.Round(((double)blue / factor)) * factor);
 
             return Color.FromArgb(Math.Min(255, red), Math.Min(255, green), Math.Min(255, blue));
         }
 
         private double DistanceBetweenColors(CIELab pixel1, CIELab pixel2)
         {
-            return Math.Sqrt(Math.Pow(pixel1.L - pixel2.L, 2) + Math.Pow(pixel1.A - pixel2.A, 2) + Math.Pow(pixel1.B - pixel2.B, 2));
+            return Math.Sqrt(Math.Pow(pixel1.L - pixel2.L, 2.0f) + Math.Pow(pixel1.A - pixel2.A, 2.0f) + Math.Pow(pixel1.B - pixel2.B, 2.0f));
         }
 
         //public class Point
@@ -351,6 +341,7 @@ namespace ColorByNumber.Pages
         public class CIELab
         {
             public Color StoredColor { get; set; }
+            public XYZ StoredXYZ { get; set; }
             private double l;
             public double L { get { return l; } }
             private double a;
@@ -361,11 +352,11 @@ namespace ColorByNumber.Pages
             public CIELab(Color color)
             {
                 StoredColor = color;
-                XYZ xyz = new XYZ(color.R, color.G, color.B);
+                StoredXYZ = new XYZ(color.R, color.G, color.B);
 
-                double var_X = xyz.X / 95.047f;
-                double var_Y = xyz.Y / 100.000f;
-                double var_Z = xyz.Z / 108.883;
+                double var_X = StoredXYZ.X / 95.047f;
+                double var_Y = StoredXYZ.Y / 100.000f;
+                double var_Z = StoredXYZ.Z / 108.883;
 
                 var_X = (var_X > 0.008856f) ? Math.Pow(var_X, (1.0f / 3.0f))
                                           : (var_X * 7.787f) + (16.0f / 116.0f);

@@ -12,6 +12,11 @@
 <div>
     @if (Model.PBCBytes != null)
     {
+        @for (int i = 0; i < Model.TopColors.Count; i++)
+        {
+            <div style="background-color:#@Model.TopColors[i].StoredColor.Name.Remove(0,2)">@i</div>
+        }
+
         <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.Original))" />
 
         @if (Model.NormalizedBytes != null)
@@ -53,6 +58,8 @@
     <input type="checkbox" name="Soften" id="Soften" asp-for="Soften" value="true" checked="@Model.Soften" />
     Clean:
     <input type="checkbox" name="Clean" id="Clean" asp-for="Clean" value="true" checked="@Model.Clean" />
+    <br />
+    <input type="text" name="SimilarityDistance" id="SimilarityDistance" asp-for="SimilarityDistance" value="@Model.SimilarityDistance" />
     <br />
     <input asp-page-handler="Upload" class="btn" type="submit" value="Upload" />
 </form>
