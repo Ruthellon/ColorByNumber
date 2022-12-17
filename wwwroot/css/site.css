@@ -1,71 +1,203 @@
 ﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
 for details on configuring this project to bundle and minify static web assets. */
 
+
+
+.cbn-body {
+    background-color: red !important;
+    padding-left: 50px !important;
+}
+
 a.navbar-brand {
-  white-space: normal;
-  text-align: center;
-  word-break: break-all;
+    white-space: normal;
+    text-align: center;
+    word-break: break-all;
 }
 
 /* Provide sufficient contrast against white background */
 a {
-  color: #0366d6;
+    color: #0366d6;
 }
 
 .btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
 }
 
 .nav-pills .nav-link.active, .nav-pills .show > .nav-link {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
 }
 
 /* Sticky footer styles
 -------------------------------------------------- */
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
+
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
 .border-top {
-  border-top: 1px solid #e5e5e5;
+    border-top: 1px solid #e5e5e5;
 }
+
 .border-bottom {
-  border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
 }
 
 .box-shadow {
-  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
 }
 
 button.accept-policy {
-  font-size: 1rem;
-  line-height: inherit;
+    font-size: 1rem;
+    line-height: inherit;
 }
 
 /* Sticky footer styles
 -------------------------------------------------- */
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
-  /* Margin bottom by footer height */
-  margin-bottom: 60px;
+    /* Margin bottom by footer height */
+    margin-bottom: 60px;
 }
+
 .footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  white-space: nowrap;
-  line-height: 60px; /* Vertically center the text there */
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 60px; /* Vertically center the text there */
+}
+
+
+/* Custom Layout Containers
+-------------------------------------------------- */
+.cbn-header-container {
+    display: grid;
+    column-gap: 40px;
+    grid-template-columns: 300px 250px 200px;
+    margin-bottom: 10px;
+    margin-top: 0px;
+    padding-left: 0px;
+    padding-bottom: 35px;
+    margin-left: -20px
+}
+
+.cbn-header-header {
+    padding: 30px 10px 10px 0px;
+    text-align: left;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.cbn-header-content {
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+
+/* Button styles
+-------------------------------------------------- */
+.cbn-button-upload {
+    background-color: #F7D065;
+    color: #000000;
+    padding: 5px 15px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 5px;
+    border-style: none;
+    outline: none;
+    box-shadow: 1px 7px 14px -5px rgba(0,0,0,0.2);
+    transition: all .4s ease;
+}
+
+    .cbn-button-upload:hover {
+        background-color: #6EDE00;
+    }
+
+/* Custom Input File Button Style
+-------------------------------------------------- */
+input[type="file"]::file-selector-button {
+    background-color: #F7D065;
+    color: #000000;
+    padding: 5px 10px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    display: inline-block;
+    border-radius: 5px;
+    border-style: none;
+    outline: none;
+    box-shadow: 1px 7px 14px -5px rgba(0,0,0,0.2);
+    transition: all .4s ease;
+}
+
+    input[type="file"]::file-selector-button:hover {
+        background-color: #6EDE00;
+    }
+
+.cbn-settings-table {
+    width: 100%;
+}
+
+.cbn-body {
+    background-color: #3889D7 !important;
+}
+
+.cbn-images-wrapper {
+    background-color: greenyellow;
+    margin-left: -25px;
+}
+
+.cbn-footer {
+    margin-top: 20px;
+}
+
+
+/* Custom Header Menu
+-------------------------------------------------- */
+ul.menu {
+    list-style-type: none;
+    margin-bottom: 0px;
+    padding-left: 20px;
+    overflow: hidden;
+    background-color: #1D3E75;
+}
+
+    ul.menu li.menu-option {
+        float: left;
+    }
+
+li.menu-option {
+    display: block;
+    text-align: center;
+    padding: 7px 10px;
+    vertical-align: middle;
+}
+
+    li.menu-option a {
+        display: block;
+        color: white;
+        text-align: center;
+        padding: 7px 10px;
+        text-decoration: none;
+        font-size: 26px;
+    }
+
+li a:hover:not(.active) {
+    background-color: #313540;
 }

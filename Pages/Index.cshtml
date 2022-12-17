@@ -3,63 +3,83 @@
 @{
     ViewData["Title"] = "Home page";
 }
+<script type="text/javascript" src="/lib/jquery/dist/jquery.min.js"></script>
+<script type="text/javascript">
+    function disableUploadButton() {
+        var btn = document.getElementById('Upload');
+        btn.disabled = true;
+        btn.value = 'Loading Image';
+        btn.style.backgroundColor = "#6EDE00";
+    }
+</script>
+<form enctype="multipart/form-data" method="post" onsubmit="disableUploadButton()">
+<div class="cbn-header-container">
+        <div class="cbn-header-header">Step 1: &nbsp;Select Image File</div>
+        <div class="cbn-header-header">Step 2: &nbsp;Select Settings</div>
+        <div class="cbn-header-header">Step 3: &nbsp;Upload</div>
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Dont Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+        <div class="cbn-header-content">
+                <input asp-for="FormFile" type="file">
+        </div>
+        <div class="cbn-header-content">
+                <table class="cbn-settings-table">
+                    <tr>
+                        <td>Normalize:</td>
+                        <td><input type="checkbox" name="Normalize" id="Normalize" asp-for="Normalize" value="true" checked="@Model.Normalize" /></td>
+                    </tr>
+                    <tr>
+                        <td>Soften:</td>
+                        <td>            <input type="checkbox" name="Soften" id="Soften" asp-for="Soften" value="true" checked="@Model.Soften" /></td>
+                    </tr>
+                    <tr>
+                        <td>Clean:</td>
+                        <td><input type="checkbox" name="Clean" id="Clean" asp-for="Clean" value="true" checked="@Model.Clean" /></td>
+                    </tr>
+                    <tr>
+                        <td>Sim Distance:</td>
+                        <td><input type="text" size="5" name="SimilarityDistance" id="SimilarityDistance" asp-for="SimilarityDistance" value="@Model.SimilarityDistance" /></td>
+                    </tr>
+                </table>    
+        </div>
+        <div class="cbn-header-content">
+                <input asp-page-handler="Upload" id="Upload" class="cbn-button-upload" type="submit" value="Upload" />
+        </div>
 </div>
-
-<div>
+</form>
+<div class="cbn-images-wrapper">
     @if (Model.PBCBytes != null)
     {
         @for (int i = 0; i < Model.TopColors.Count; i++)
         {
-            <div style="background-color:#@Model.TopColors[i].StoredColor.Name.Remove(0,2)">@i</div>
+                    <div style="background-color:#@Model.TopColors[i].StoredColor.Name.Remove(0,2)">@i</div>
         }
 
-        <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.Original))" />
+            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.Original))" />
 
         @if (Model.NormalizedBytes != null)
         {
-            <p>Normalized: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.NormalizedBytes))" /></p>
+                    <p>Normalized: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.NormalizedBytes))" /></p>
         }
         @if (Model.SoftenedBytes != null)
         {
-            <p>
-                Softened: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.SoftenedBytes))" />
-            </p>
+                    <p>
+                        Softened: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.SoftenedBytes))" />
+                    </p>
         }
-        <p>
-            PBC: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
-        </p>
+            <p>
+                PBC: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
+            </p>
         @if (Model.CleanedBytes != null)
         {
-            <p>
-                Cleaned: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.CleanedBytes))" />
-            </p>
+                    <p>
+                        Cleaned: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.CleanedBytes))" />
+                    </p>
         }
-        <p>
-            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.OutlineBytes))" />
-        </p>
+            <p>
+                <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.OutlineBytes))" />
+            </p>
     }
 </div>
-<form enctype="multipart/form-data" method="post">
-    <dl>
-        <dt>
-            <label asp-for="FormFile"></label>
-        </dt>
-        <dd>
-            <input asp-for="FormFile" type="file">
-        </dd>
-    </dl>
-    Normalize:
-    <input type="checkbox" name="Normalize" id="Normalize" asp-for="Normalize" value="true" checked="@Model.Normalize" />
-    Soften:
-    <input type="checkbox" name="Soften" id="Soften" asp-for="Soften" value="true" checked="@Model.Soften" />
-    Clean:
-    <input type="checkbox" name="Clean" id="Clean" asp-for="Clean" value="true" checked="@Model.Clean" />
-    <br />
-    <input type="text" name="SimilarityDistance" id="SimilarityDistance" asp-for="SimilarityDistance" value="@Model.SimilarityDistance" />
-    <br />
-    <input asp-page-handler="Upload" class="btn" type="submit" value="Upload" />
-</form>
+
+
+
