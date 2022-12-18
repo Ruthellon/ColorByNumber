@@ -62,7 +62,7 @@ namespace ColorByNumber.Pages
                             Original = (byte[])new ImageConverter().ConvertTo(img, typeof(byte[]));
 
                             //Bitmap image = new Bitmap(img, new Size(img.Width / 2, img.Height / 2));
-                            WorkingImage = new Bitmap(img, new Size(img.Width / 2, img.Height / 2));
+                            WorkingImage = new Bitmap(img); //new Bitmap(img, new Size(img.Width / 2, img.Height / 2));
 
                             if (Normalize)
                             {
@@ -87,6 +87,8 @@ namespace ColorByNumber.Pages
 
                             GetOutlines();
                             //OutlineBytes = (byte[])new ImageConverter().ConvertTo(WorkingImage, typeof(byte[]));
+
+                            //WorkingImage = new Bitmap(WorkingImage, new Size(WorkingImage.Width * 2, WorkingImage.Height * 2));
 
                             Bitmap bmp = new Bitmap(WorkingImage.Width, WorkingImage.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
                             using (Graphics g = Graphics.FromImage(bmp))
@@ -151,9 +153,9 @@ namespace ColorByNumber.Pages
                 {
                     Dictionary<Color, int> colors = new Dictionary<Color, int>();
 
-                    for (int b = Math.Max(y - 3, 0); b <= Math.Min(y + 3, WorkingImage.Height - 1); b++)
+                    for (int b = Math.Max(y - 1, 0); b <= Math.Min(y + 1, WorkingImage.Height - 1); b++)
                     {
-                        for (int a = Math.Max(x - 3, 0); a <= Math.Min(x + 3, WorkingImage.Width - 1); a++)
+                        for (int a = Math.Max(x - 1, 0); a <= Math.Min(x + 1, WorkingImage.Width - 1); a++)
                         {
                             if (colors.ContainsKey(WorkingImage.GetPixel(a, b)))
                                 colors[WorkingImage.GetPixel(a, b)]++;
@@ -161,16 +163,29 @@ namespace ColorByNumber.Pages
                                 colors.Add(WorkingImage.GetPixel(a, b), 1);
                         }
                     }
-
-                    if (colors.Where(z => z.Key == WorkingImage.GetPixel(x, y)).FirstOrDefault().Value < 9)
+                    int currentColorCount = colors.Where(z => z.Key == WorkingImage.GetPixel(x, y)).FirstOrDefault().Value;
+                    if (currentColorCount < 4)
                     {
-                        if (x > 0)
+                        WorkingImage.SetPixel(x,y, colors.OrderByDescending(z => z.Value).FirstOrDefault().Key);
+                    }
+                    else if (currentColorCount < 9)
+                    {
+                        colors.Clear();
+                        for (int b = Math.Max(y - 2, 0); b <= Math.Min(y + 2, WorkingImage.Height - 1); b++)
                         {
-                            WorkingImage.SetPixel(x, y, WorkingImage.GetPixel(x-1, y));
+                            for (int a = Math.Max(x - 2, 0); a <= Math.Min(x + 2, WorkingImage.Width - 1); a++)
+                            {
+                                if (colors.ContainsKey(WorkingImage.GetPixel(a, b)))
+                                    colors[WorkingImage.GetPixel(a, b)]++;
+                                else
+                                    colors.Add(WorkingImage.GetPixel(a, b), 1);
+                            }
                         }
-                        else if (y > 0)
+
+                        currentColorCount = colors.Where(z => z.Key == WorkingImage.GetPixel(x, y)).FirstOrDefault().Value;
+                        if (currentColorCount < 9)
                         {
-                            WorkingImage.SetPixel(x, y, WorkingImage.GetPixel(x, y-1));
+                            WorkingImage.SetPixel(x,y, colors.OrderByDescending(z => z.Value).Where(zz => zz.Key != WorkingImage.GetPixel(x,y)).FirstOrDefault().Key);
                         }
                     }
                 }

@@ -51,33 +51,42 @@
     {
         @for (int i = 0; i < Model.TopColors.Count; i++)
         {
-                    <div style="background-color:#@Model.TopColors[i].StoredColor.Name.Remove(0,2)">@i</div>
+            <div style="background-color:#@Model.TopColors[i].StoredColor.Name.Remove(0,2)">@i</div>
         }
 
-            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.Original))" />
+        <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.Original))" />
+        <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.OutlineBytes))" />
 
         @if (Model.NormalizedBytes != null)
         {
-                    <p>Normalized: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.NormalizedBytes))" /></p>
+            <div>
+                Normalized: 
+                <br />
+                <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.NormalizedBytes))" />
+            </div>
         }
+
         @if (Model.SoftenedBytes != null)
         {
-                    <p>
-                        Softened: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.SoftenedBytes))" />
-                    </p>
+            <div>
+                Softened:
+                <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.SoftenedBytes))" />
+            </div>
         }
-            <p>
-                PBC: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
-            </p>
+        <div>
+            PBC:
+            <br />
+            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
+        </div>
+
         @if (Model.CleanedBytes != null)
         {
-                    <p>
-                        Cleaned: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.CleanedBytes))" />
-                    </p>
+            <div>
+                Cleaned:
+                <br />
+                <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.CleanedBytes))" />
+            </div>
         }
-            <p>
-                <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.OutlineBytes))" />
-            </p>
     }
 </div>
 
