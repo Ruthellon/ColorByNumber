@@ -4,6 +4,8 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ColorByNumber.Pages
 {
@@ -33,6 +35,33 @@ namespace ColorByNumber.Pages
         public List<CIELab> TopColors { get; set; } = new List<CIELab>();
 
         private readonly ILogger<IndexModel> _logger;
+
+        private List<List<Point>> Numbers = new List<List<Point>>()
+        {
+            new List<Point>()
+            {
+                new Point(0,0),
+                new Point(0, -1),
+                new Point(0, -2),
+                new Point(-1, -1),
+                new Point(0, 1),
+                new Point(0, 2),
+                new Point(1, 2),
+                new Point(-1, 2)
+            },
+            new List<Point>()
+            {
+                new Point(0,0),
+                new Point(1, -1),
+                new Point(1, -2),
+                new Point(0, -2),
+                new Point(-1, -1),
+                new Point(-1, 1),
+                new Point(-1, 2),
+                new Point(0, 2),
+                new Point(1, 2)
+            }
+        };
 
         public IndexModel(ILogger<IndexModel> logger)
         {
@@ -92,6 +121,28 @@ namespace ColorByNumber.Pages
 
                                 PBCBytes = processedStream.ToArray();
                             }
+
+                            if (Clean)
+                            {
+                                image = CleanImage(image);
+
+                                using (var cleanedStream = new MemoryStream())
+                                {
+                                    image.SaveAsPng(cleanedStream);
+
+                                    CleanedBytes = cleanedStream.ToArray();
+                                }
+                            }
+
+                            var outline = GetOutlines(image);
+
+                            using (var outlineStream = new MemoryStream())
+                            {
+                                outline.Mutate(x => x.BackgroundColor(Color.White));
+                                outline.SaveAsPng(outlineStream);
+
+                                OutlineBytes = outlineStream.ToArray();
+                            }
                         }
                     }
                 }
@@ -102,57 +153,6 @@ namespace ColorByNumber.Pages
             }
             return Page();
         }
-
-        //                using (var img = Image.FromStream(memoryStream))
-        //                {
-        //                    Original = (byte[])new ImageConverter().ConvertTo(img, typeof(byte[]));
-
-        //                    //Bitmap image = new Bitmap(img, new Size(img.Width / 2, img.Height / 2));
-        //                    WorkingImage = new Bitmap(img); //new Bitmap(img, new Size(img.Width / 2, img.Height / 2));
-
-        //                    if (Normalize)
-        //                    {
-        //                        NormalizeImage();
-        //                        NormalizedBytes = (byte[])new ImageConverter().ConvertTo(WorkingImage, typeof(byte[]));
-        //                    }
-
-        //                    if (Soften)
-        //                    {
-        //                        SoftenImage();
-        //                        SoftenedBytes = (byte[])new ImageConverter().ConvertTo(WorkingImage, typeof(byte[]));
-        //                    }
-
-        //                    ProcessImage();
-        //                    PBCBytes = (byte[])new ImageConverter().ConvertTo(WorkingImage, typeof(byte[]));
-
-        //                    if (Clean)
-        //                    {
-        //                        CleanImage();
-        //                        CleanedBytes = (byte[])new ImageConverter().ConvertTo(WorkingImage, typeof(byte[]));
-        //                    }
-
-        //                    GetOutlines();
-        //                    //OutlineBytes = (byte[])new ImageConverter().ConvertTo(WorkingImage, typeof(byte[]));
-
-        //                    //WorkingImage = new Bitmap(WorkingImage, new Size(WorkingImage.Width * 2, WorkingImage.Height * 2));
-
-        //                    Bitmap bmp = new Bitmap(WorkingImage.Width, WorkingImage.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-        //                    using (Graphics g = Graphics.FromImage(bmp))
-        //                    {
-        //                        g.Clear(Color.White);
-        //                        g.DrawImage(WorkingImage, new Rectangle(new Point(), WorkingImage.Size), new Rectangle(new Point(), WorkingImage.Size), GraphicsUnit.Pixel);
-        //                    }
-        //                    OutlineBytes = (byte[])new ImageConverter().ConvertTo(bmp, typeof(byte[]));
-        //                }
-        //            }
-        //        }
-        //    }
-        //    catch (Exception e)
-        //    {
-        //    }
-
-        //    return Page();
-        //}
 
         private Image<Rgba32> SoftenImage(Image<Rgba32> image)
         {
@@ -196,52 +196,55 @@ namespace ColorByNumber.Pages
             return normalized;
         }
 
-        //private void CleanImage()
-        //{
-        //    for (int y = 0; y < WorkingImage.Height; y++)
-        //    {
-        //        for (int x = 0; x < WorkingImage.Width; x++)
-        //        {
-        //            Dictionary<Color, int> colors = new Dictionary<Color, int>();
+        private Image<Rgba32> CleanImage(Image<Rgba32> image)
+        {
+            Image<Rgba32> cleaned = image;
+            for (int y = 0; y < image.Height; y++)
+            {
+                for (int x = 0; x < image.Width; x++)
+                {
+                    Dictionary<Rgba32, int> colors = new Dictionary<Rgba32, int>();
 
-        //            for (int b = Math.Max(y - 1, 0); b <= Math.Min(y + 1, WorkingImage.Height - 1); b++)
-        //            {
-        //                for (int a = Math.Max(x - 1, 0); a <= Math.Min(x + 1, WorkingImage.Width - 1); a++)
-        //                {
-        //                    if (colors.ContainsKey(WorkingImage.GetPixel(a, b)))
-        //                        colors[WorkingImage.GetPixel(a, b)]++;
-        //                    else
-        //                        colors.Add(WorkingImage.GetPixel(a, b), 1);
-        //                }
-        //            }
-        //            int currentColorCount = colors.Where(z => z.Key == WorkingImage.GetPixel(x, y)).FirstOrDefault().Value;
-        //            if (currentColorCount < 4)
-        //            {
-        //                WorkingImage.SetPixel(x, y, colors.OrderByDescending(z => z.Value).FirstOrDefault().Key);
-        //            }
-        //            else if (currentColorCount < 9)
-        //            {
-        //                colors.Clear();
-        //                for (int b = Math.Max(y - 2, 0); b <= Math.Min(y + 2, WorkingImage.Height - 1); b++)
-        //                {
-        //                    for (int a = Math.Max(x - 2, 0); a <= Math.Min(x + 2, WorkingImage.Width - 1); a++)
-        //                    {
-        //                        if (colors.ContainsKey(WorkingImage.GetPixel(a, b)))
-        //                            colors[WorkingImage.GetPixel(a, b)]++;
-        //                        else
-        //                            colors.Add(WorkingImage.GetPixel(a, b), 1);
-        //                    }
-        //                }
+                    for (int b = Math.Max(y - 1, 0); b <= Math.Min(y + 1, image.Height - 1); b++)
+                    {
+                        for (int a = Math.Max(x - 1, 0); a <= Math.Min(x + 1, image.Width - 1); a++)
+                        {
+                            if (colors.ContainsKey(image[a, b]))
+                                colors[image[a, b]]++;
+                            else
+                                colors.Add(image[a, b], 1);
+                        }
+                    }
+                    int currentColorCount = colors.Where(z => z.Key == image[x, y]).FirstOrDefault().Value;
+                    if (currentColorCount < 4)
+                    {
+                        cleaned[x, y] = colors.OrderByDescending(z => z.Value).FirstOrDefault().Key;
+                    }
+                    else if (currentColorCount < 9)
+                    {
+                        colors.Clear();
+                        for (int b = Math.Max(y - 2, 0); b <= Math.Min(y + 2, image.Height - 1); b++)
+                        {
+                            for (int a = Math.Max(x - 2, 0); a <= Math.Min(x + 2, image.Width - 1); a++)
+                            {
+                                if (colors.ContainsKey(image[a, b]))
+                                    colors[image[a, b]]++;
+                                else
+                                    colors.Add(image[a, b], 1);
+                            }
+                        }
 
-        //                currentColorCount = colors.Where(z => z.Key == WorkingImage.GetPixel(x, y)).FirstOrDefault().Value;
-        //                if (currentColorCount < 9)
-        //                {
-        //                    WorkingImage.SetPixel(x, y, colors.OrderByDescending(z => z.Value).Where(zz => zz.Key != WorkingImage.GetPixel(x, y)).FirstOrDefault().Key);
-        //                }
-        //            }
-        //        }
-        //    }
-        //}
+                        currentColorCount = colors.Where(z => z.Key == image[x, y]).FirstOrDefault().Value;
+                        if (currentColorCount < 9)
+                        {
+                            cleaned[x, y] = colors.OrderByDescending(z => z.Value).Where(zz => zz.Key != image[x, y]).FirstOrDefault().Key;
+                        }
+                    }
+                }
+            }
+
+            return cleaned;
+        }
 
         private Image<Rgba32> ProcessImage(Image<Rgba32> image)
         {
@@ -308,47 +311,89 @@ namespace ColorByNumber.Pages
             return processedImage;
         }
 
-        //private void GetOutlines()
-        //{
-        //    Bitmap outline = new Bitmap(WorkingImage);
+        private Image<Rgba32> GetOutlines(Image<Rgba32> image)
+        {
+            Image<Rgba32> outline = new Image<Rgba32>(image.Width, image.Height);
 
-        //    for (int y = 0; y < WorkingImage.Height; y++)
-        //    {
-        //        for (int x = 1; x < WorkingImage.Width; x++)
-        //        {
-        //            Color color = WorkingImage.GetPixel(x, y);
-        //            outline.SetPixel(x, y, Color.FromArgb(32, color.R, color.G, color.B));
-        //        }
-        //    }
+            //for (int y = 0; y < image.Height; y++)
+            //{
+            //    for (int x = 1; x < image.Width; x++)
+            //    {
+            //        Rgba32 color = image[x, y];
+            //        outline[x, y] = new Rgba32(color.R, color.G, color.B, (byte)32);
+            //    }
+            //}
 
-        //    for (int y = 0; y < WorkingImage.Height; y++)
-        //    {
-        //        for (int x = 1; x < WorkingImage.Width; x++)
-        //        {
-        //            if (WorkingImage.GetPixel(x, y) != WorkingImage.GetPixel(x - 1, y))
-        //            {
-        //                outline.SetPixel(x, y, Color.Black);
-        //                x++;
-        //                continue;
-        //            }
-        //        }
-        //    }
+            for (int y = 0; y < image.Height; y++)
+            {
+                for (int x = 1; x < image.Width; x++)
+                {
+                    if (image[x, y] != image[x - 1, y])
+                    {
+                        outline[x, y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)128);
+                        x++;
+                        continue;
+                    }
+                }
+            }
 
-        //    for (int x = 0; x < WorkingImage.Width; x++)
-        //    {
-        //        for (int y = 1; y < WorkingImage.Height; y++)
-        //        {
-        //            if (WorkingImage.GetPixel(x, y) != WorkingImage.GetPixel(x, y - 1))
-        //            {
-        //                outline.SetPixel(x, y, Color.Black);
-        //                y++;
-        //                continue;
-        //            }
-        //        }
-        //    }
+            for (int x = 0; x < image.Width; x++)
+            {
+                for (int y = 1; y < image.Height; y++)
+                {
+                    if (image[x, y] != image[x, y - 1])
+                    {
+                        outline[x, y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)128);
+                        y++;
+                        continue;
+                    }
+                }
+            }
 
-        //    WorkingImage = outline;
-        //}
+            for (int y = 2; y < image.Height - 2; y += 10)
+            {
+                for (int x = 2; x < image.Width - 2; x++)
+                {
+                    Rgba32 currentColor = image[x, y];
+                    bool same = true;
+                    for (int b = Math.Max(y - 2, 0); b <= Math.Min(y + 2, image.Height - 1); b++)
+                    {
+                        for (int a = Math.Max(x - 2, 0); a <= Math.Min(x + 2, image.Width - 1); a++)
+                        {
+                            if (image[a, b] != currentColor)
+                            {
+                                same = false;
+                                break;
+                            }
+                        }
+
+                        if (!same)
+                            break;
+                    }
+
+                    if (same)
+                    {
+                        for (int i = 0; i < TopColors.Count; i++)
+                        {
+                            if (currentColor == TopColors[i].StoredColor)
+                            {
+                                if (i < Numbers.Count)
+                                {
+                                    foreach (var point in Numbers[i])
+                                    {
+                                        outline[point.X + x, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                    }
+                                }
+                            }
+                        }
+
+                        x += 9;
+                    }
+                }
+            }
+
+            return outline;
+        }
 
         private Rgba32 NormalizeColor(Rgba32 pixel, double factor)
         {
@@ -370,11 +415,16 @@ namespace ColorByNumber.Pages
             return Math.Sqrt(Math.Pow(pixel1.L - pixel2.L, 2.0f) + Math.Pow(pixel1.A - pixel2.A, 2.0f) + Math.Pow(pixel1.B - pixel2.B, 2.0f));
         }
 
-        //public class Point
-        //{
-        //    public int X { get; set; }
-        //    public int Y { get; set; }
-        //}
+        public class Point
+        {
+            public int X { get; }
+            public int Y { get; }
+            public Point (int x, int y)
+            {
+                X = x;
+                Y = y;
+            }
+        }
 
         public class XYZ
         {
