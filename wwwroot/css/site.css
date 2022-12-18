@@ -1,13 +1,6 @@
 ﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
 for details on configuring this project to bundle and minify static web assets. */
 
-
-
-.cbn-body {
-    background-color: red !important;
-    padding-left: 50px !important;
-}
-
 a.navbar-brand {
     white-space: normal;
     text-align: center;
@@ -35,12 +28,6 @@ a {
 -------------------------------------------------- */
 html {
     font-size: 14px;
-}
-
-@media (min-width: 768px) {
-    html {
-        font-size: 16px;
-    }
 }
 
 .border-top {
@@ -84,30 +71,47 @@ body {
 /* Custom Layout Containers
 -------------------------------------------------- */
 .cbn-header-container {
-    display: grid;
+    display: flex;
+    flex-wrap:wrap;
     column-gap: 40px;
-    grid-template-columns: 300px 250px 200px;
+    /*grid-template-columns: 300px 250px 200px;*/
+    grid-template-columns: repeat(auto-fit, minmax(200px, 300px));
     margin-bottom: 10px;
     margin-top: 0px;
     padding-left: 0px;
     padding-bottom: 35px;
-    margin-left: -20px
-}
-
-.cbn-header-header {
-    padding: 30px 10px 10px 0px;
-    text-align: left;
-    color: #ffffff;
-    font-size: 18px;
-    font-weight: 500;
+    margin-left: 50px;
 }
 
 .cbn-header-content {
     background-color: #ffffff;
     padding: 10px;
     border-radius: 10px;
+    margin: 20px 0px;
+    min-width: 300px;
 }
 
+@media (min-width: 420px) and (max-width: 580px) {
+    .cbn-header-container {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+        margin-top: 0px;
+        padding-left: 0px;
+        padding-bottom: 15px;
+        margin-left: 5px;
+    }
+    .cbn-header-content {
+        background-color: #ffffff;
+        padding: 10px;
+        border-radius: 10px;
+        margin: 10px 0px;
+        min-width: 300px;
+    }
+    .cbn-image-max {
+        max-width: 200px;
+    }
+}
 
 /* Button styles
 -------------------------------------------------- */
@@ -137,7 +141,7 @@ input[type="file"]::file-selector-button {
     padding: 5px 10px;
     text-align: center;
     text-decoration: none;
-    font-size: 16px;
+    font-size: 14px;
     display: inline-block;
     border-radius: 5px;
     border-style: none;
@@ -156,7 +160,8 @@ input[type="file"]::file-selector-button {
 
 .cbn-body {
     background-color: #3889D7 !important;
-    min-width: 985px;
+    padding-left: 0px !important;
+    max-width:1100px;
 }
 
 .cbn-footer {
@@ -176,10 +181,12 @@ input[type="file"]::file-selector-button {
 }
     .cbn-results-table td {
         text-align: left;
+        max-width: 800px;
     }
 
 .cbn-image-max {
-    max-width: 800px;
+    height: auto;
+    max-width:100%;
 }
 
 /* Custom Header Menu

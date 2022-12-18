@@ -14,14 +14,12 @@
 </script>
 <form enctype="multipart/form-data" method="post" onsubmit="disableUploadButton()">
 <div class="cbn-header-container">
-        <div class="cbn-header-header">Step 1: &nbsp;Select Image File</div>
-        <div class="cbn-header-header">Step 2: &nbsp;Select Settings</div>
-        <div class="cbn-header-header">Step 3: &nbsp;Upload</div>
-
         <div class="cbn-header-content">
+            Step 1: &nbsp;Select Image File<br />
                 <input asp-for="FormFile" type="file">
         </div>
         <div class="cbn-header-content">
+            Step 2: &nbsp;Select Settings<br />
                 <table class="cbn-settings-table">
                     <tr>
                         <td>Normalize:</td>
@@ -42,6 +40,7 @@
                 </table>    
         </div>
         <div class="cbn-header-content">
+            Step 3: &nbsp;Upload<br />
                 <input asp-page-handler="Upload" id="Upload" class="cbn-button-upload" type="submit" value="Upload" />
         </div>
 </div>
