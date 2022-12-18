@@ -49,35 +49,77 @@
 <div class="cbn-images-wrapper">
     @if (Model.PBCBytes != null)
     {
-        @for (int i = 0; i < Model.TopColors.Count; i++)
-        {
-                    <div style="background-color:#@Model.TopColors[i].StoredColor.Name.Remove(0,2)">@i</div>
-        }
-
-            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.Original))" />
-
-        @if (Model.NormalizedBytes != null)
-        {
-                    <p>Normalized: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.NormalizedBytes))" /></p>
-        }
-        @if (Model.SoftenedBytes != null)
-        {
-                    <p>
-                        Softened: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.SoftenedBytes))" />
-                    </p>
-        }
-            <p>
-                PBC: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
-            </p>
-        @if (Model.CleanedBytes != null)
-        {
-                    <p>
-                        Cleaned: <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.CleanedBytes))" />
-                    </p>
-        }
-            <p>
-                <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.OutlineBytes))" />
-            </p>
+        <table class="cbn-results-table">
+            <tr>
+                <td>
+                    Color Palette:
+                </td>
+                <td>
+                    @for (int i = 0; i < Model.TopColors.Count; i++)
+                    {
+                        <div style="background-color:#@Model.TopColors[i].StoredColor.Name.Remove(0,2)">@i</div>
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Origional:
+                </td>
+                <td>
+                    <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.Original))">
+                </td>
+            </tr>
+            @if (Model.NormalizedBytes != null)
+            {
+                <tr>
+                      <td>
+                          Normalized:
+                    </td>
+                    <td>
+                        <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.NormalizedBytes))" />
+                    </td>
+                </tr>
+            }
+            @if (Model.SoftenedBytes != null)
+            {       
+                <tr>
+                    <td>
+                        Softened:
+                    </td>
+                    <td>
+                        <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.SoftenedBytes))" />
+                    </td>
+                </tr>
+            }
+            <tr>
+                <td>
+                    PBC:
+                   
+                </td>
+                <td>
+                    <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
+                </td>
+            </tr>
+            @if (Model.CleanedBytes != null)
+            {
+               <tr>
+                    <td>
+                        Cleaned:
+                    </td>
+                    <td>
+                        <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.CleanedBytes))" />
+                    </td>
+                </tr>
+            }
+            <tr>
+                <td>
+                    Final:
+                </td>
+                <td>
+                    <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.OutlineBytes))" />
+                </td>
+            </tr>
+        </table>
     }
 </div>
 

@@ -159,14 +159,27 @@ input[type="file"]::file-selector-button {
 }
 
 .cbn-images-wrapper {
-    background-color: greenyellow;
+    background-color: #3889D7;
     margin-left: -25px;
+    font-weight: 500;
+    color: #ffffff;
 }
 
 .cbn-footer {
-    margin-top: 20px;
+    margin-top: 5px;
 }
 
+.cbn-results-table {
+    border-spacing: 40px 10px;
+    border-collapse: separate;
+}
+    .cbn-results-table td {
+        text-align: left;
+    }
+
+.cbn-image-max {
+    max-width: 800px;
+}
 
 /* Custom Header Menu
 -------------------------------------------------- */
@@ -201,3 +214,4 @@ li.menu-option {
 li a:hover:not(.active) {
     background-color: #313540;
 }
+
