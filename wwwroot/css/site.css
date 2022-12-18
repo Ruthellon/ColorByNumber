@@ -91,6 +91,14 @@ body {
     min-width: 300px;
 }
 
+.cbn-header-content-title {
+    display: block;
+    color: #EF4F5C;
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
 @media (min-width: 420px) and (max-width: 580px) {
     .cbn-header-container {
         display: flex;

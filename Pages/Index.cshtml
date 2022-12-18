@@ -15,32 +15,32 @@
 <form enctype="multipart/form-data" method="post" onsubmit="disableUploadButton()">
 <div class="cbn-header-container">
         <div class="cbn-header-content">
-            Step 1: &nbsp;Select Image File<br />
-                <input asp-for="FormFile" type="file">
+            <span class="cbn-header-content-title">Step 1: &nbsp;Select Image File</span>
+            <input asp-for="FormFile" type="file">
         </div>
         <div class="cbn-header-content">
-            Step 2: &nbsp;Select Settings<br />
-                <table class="cbn-settings-table">
-                    <tr>
-                        <td>Normalize:</td>
-                        <td><input type="checkbox" name="Normalize" id="Normalize" asp-for="Normalize" value="true" checked="@Model.Normalize" /></td>
-                    </tr>
-                    <tr>
-                        <td>Soften:</td>
-                        <td>            <input type="checkbox" name="Soften" id="Soften" asp-for="Soften" value="true" checked="@Model.Soften" /></td>
-                    </tr>
-                    <tr>
-                        <td>Clean:</td>
-                        <td><input type="checkbox" name="Clean" id="Clean" asp-for="Clean" value="true" checked="@Model.Clean" /></td>
-                    </tr>
-                    <tr>
-                        <td>Sim Distance:</td>
-                        <td><input type="text" size="5" name="SimilarityDistance" id="SimilarityDistance" asp-for="SimilarityDistance" value="@Model.SimilarityDistance" /></td>
-                    </tr>
-                </table>    
+            <span class="cbn-header-content-title">Step 2: &nbsp;Select Settings</span>
+            <table class="cbn-settings-table">
+                <tr>
+                    <td>Normalize:</td>
+                    <td><input type="checkbox" name="Normalize" id="Normalize" asp-for="Normalize" value="true" checked="@Model.Normalize" /></td>
+                </tr>
+                <tr>
+                    <td>Soften:</td>
+                    <td>            <input type="checkbox" name="Soften" id="Soften" asp-for="Soften" value="true" checked="@Model.Soften" /></td>
+                </tr>
+                <tr>
+                    <td>Clean:</td>
+                    <td><input type="checkbox" name="Clean" id="Clean" asp-for="Clean" value="true" checked="@Model.Clean" /></td>
+                </tr>
+                <tr>
+                    <td>Sim Distance:</td>
+                    <td><input type="text" size="5" name="SimilarityDistance" id="SimilarityDistance" asp-for="SimilarityDistance" value="@Model.SimilarityDistance" /></td>
+                </tr>
+            </table>    
         </div>
         <div class="cbn-header-content">
-            Step 3: &nbsp;Upload<br />
+                <span class="cbn-header-content-title">Step 3: &nbsp;Upload</span>
                 <input asp-page-handler="Upload" id="Upload" class="cbn-button-upload" type="submit" value="Upload" />
         </div>
 </div>
