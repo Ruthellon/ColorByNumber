@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Home page";
 }
+
 <script type="text/javascript" src="/lib/jquery/dist/jquery.min.js"></script>
 <script type="text/javascript">
     function disableUploadButton() {
@@ -13,40 +14,42 @@
     }
 </script>
 <form enctype="multipart/form-data" method="post" onsubmit="disableUploadButton()">
-<div class="cbn-header-container">
+    <div class="cbn-header-container">
+        <div class="cbn-header-header">Step 1: &nbsp;Select Image File</div>
+        <div class="cbn-header-header">Step 2: &nbsp;Select Settings</div>
+        <div class="cbn-header-header">Step 3: &nbsp;Upload</div>
+
         <div class="cbn-header-content">
-            Step 1: &nbsp;Select Image File<br />
-                <input asp-for="FormFile" type="file">
+            <input asp-for="FormFile" type="file">
         </div>
         <div class="cbn-header-content">
-            Step 2: &nbsp;Select Settings<br />
-                <table class="cbn-settings-table">
-                    <tr>
-                        <td>Normalize:</td>
-                        <td><input type="checkbox" name="Normalize" id="Normalize" asp-for="Normalize" value="true" checked="@Model.Normalize" /></td>
-                    </tr>
-                    <tr>
-                        <td>Soften:</td>
-                        <td>            <input type="checkbox" name="Soften" id="Soften" asp-for="Soften" value="true" checked="@Model.Soften" /></td>
-                    </tr>
-                    <tr>
-                        <td>Clean:</td>
-                        <td><input type="checkbox" name="Clean" id="Clean" asp-for="Clean" value="true" checked="@Model.Clean" /></td>
-                    </tr>
-                    <tr>
-                        <td>Sim Distance:</td>
-                        <td><input type="text" size="5" name="SimilarityDistance" id="SimilarityDistance" asp-for="SimilarityDistance" value="@Model.SimilarityDistance" /></td>
-                    </tr>
-                </table>    
+            <table class="cbn-settings-table">
+                <tr>
+                    <td>Normalize:</td>
+                    <td><input type="checkbox" name="Normalize" id="Normalize" asp-for="Normalize" value="true" checked="@Model.Normalize" /></td>
+                    <td><input type="text" name="NormalizeFactor" id="NormalizeFactor" asp-for="NormalizeFactor" value="@Model.NormalizeFactor" size="5" /></td>
+                </tr>
+                <tr>
+                    <td>Soften:</td>
+                    <td>            <input type="checkbox" name="Soften" id="Soften" asp-for="Soften" value="true" checked="@Model.Soften" /></td>
+                </tr>
+                <tr>
+                    <td>Clean:</td>
+                    <td><input type="checkbox" name="Clean" id="Clean" asp-for="Clean" value="true" checked="@Model.Clean" /></td>
+                </tr>
+                <tr>
+                    <td>Sim Distance:</td>
+                    <td><input type="text" size="5" name="SimilarityDistance" id="SimilarityDistance" asp-for="SimilarityDistance" value="@Model.SimilarityDistance" /></td>
+                </tr>
+            </table>
         </div>
         <div class="cbn-header-content">
-            Step 3: &nbsp;Upload<br />
-                <input asp-page-handler="Upload" id="Upload" class="cbn-button-upload" type="submit" value="Upload" />
+            <input asp-page-handler="Upload" id="Upload" class="cbn-button-upload" type="submit" value="Upload" />
         </div>
-</div>
+    </div>
 </form>
 <div class="cbn-images-wrapper">
-    @if (Model.PBCBytes != null)
+    @if (Model.Original != null)
     {
         <table class="cbn-results-table">
             <tr>
@@ -56,13 +59,13 @@
                 <td>
                     @for (int i = 0; i < Model.TopColors.Count; i++)
                     {
-                        <div style="background-color:#@Model.TopColors[i].StoredColor.Name.Remove(0,2)">@i</div>
+                        <div style="background-color:#@Model.TopColors[i].StoredColor.ToHex().Remove(6,2)">@i</div>
                     }
                 </td>
             </tr>
             <tr>
                 <td>
-                    Origional:
+                    Original:
                 </td>
                 <td>
                     <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.Original))">
@@ -71,8 +74,8 @@
             @if (Model.NormalizedBytes != null)
             {
                 <tr>
-                      <td>
-                          Normalized:
+                    <td>
+                        Normalized:
                     </td>
                     <td>
                         <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.NormalizedBytes))" />
@@ -80,7 +83,7 @@
                 </tr>
             }
             @if (Model.SoftenedBytes != null)
-            {       
+            {
                 <tr>
                     <td>
                         Softened:
@@ -90,18 +93,20 @@
                     </td>
                 </tr>
             }
-            <tr>
-                <td>
-                    PBC:
-                   
-                </td>
-                <td>
-                    <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
-                </td>
-            </tr>
+            @if (Model.PBCBytes != null)
+            {
+                <tr>
+                    <td>
+                        PBC:
+                    </td>
+                    <td>
+                        <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
+                    </td>
+                </tr>
+            }
             @if (Model.CleanedBytes != null)
             {
-               <tr>
+                <tr>
                     <td>
                         Cleaned:
                     </td>
@@ -110,17 +115,19 @@
                     </td>
                 </tr>
             }
-            <tr>
-                <td>
-                    Final:
-                </td>
-                <td>
-                    <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.OutlineBytes))" />
-                </td>
-            </tr>
+            @if (Model.OutlineBytes != null)
+            {
+                <tr>
+                    <td>
+                        Final:
+                    </td>
+                    <td>
+                        <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.OutlineBytes))" />
+                    </td>
+                </tr>
+            }
         </table>
     }
 </div>
-
 
 
