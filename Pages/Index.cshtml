@@ -49,44 +49,77 @@
 <div class="cbn-images-wrapper">
     @if (Model.PBCBytes != null)
     {
-        @for (int i = 0; i < Model.TopColors.Count; i++)
-        {
-            <div style="background-color:#@Model.TopColors[i].StoredColor.Name.Remove(0,2)">@i</div>
-        }
-
-        <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.Original))" />
-        <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.OutlineBytes))" />
-
-        @if (Model.NormalizedBytes != null)
-        {
-            <div>
-                Normalized: 
-                <br />
-                <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.NormalizedBytes))" />
-            </div>
-        }
-
-        @if (Model.SoftenedBytes != null)
-        {
-            <div>
-                Softened:
-                <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.SoftenedBytes))" />
-            </div>
-        }
-        <div>
-            PBC:
-            <br />
-            <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
-        </div>
-
-        @if (Model.CleanedBytes != null)
-        {
-            <div>
-                Cleaned:
-                <br />
-                <img src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.CleanedBytes))" />
-            </div>
-        }
+        <table class="cbn-results-table">
+            <tr>
+                <td>
+                    Color Palette:
+                </td>
+                <td>
+                    @for (int i = 0; i < Model.TopColors.Count; i++)
+                    {
+                        <div style="background-color:#@Model.TopColors[i].StoredColor.Name.Remove(0,2)">@i</div>
+                    }
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Origional:
+                </td>
+                <td>
+                    <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.Original))">
+                </td>
+            </tr>
+            @if (Model.NormalizedBytes != null)
+            {
+                <tr>
+                      <td>
+                          Normalized:
+                    </td>
+                    <td>
+                        <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.NormalizedBytes))" />
+                    </td>
+                </tr>
+            }
+            @if (Model.SoftenedBytes != null)
+            {       
+                <tr>
+                    <td>
+                        Softened:
+                    </td>
+                    <td>
+                        <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.SoftenedBytes))" />
+                    </td>
+                </tr>
+            }
+            <tr>
+                <td>
+                    PBC:
+                   
+                </td>
+                <td>
+                    <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.PBCBytes))" />
+                </td>
+            </tr>
+            @if (Model.CleanedBytes != null)
+            {
+               <tr>
+                    <td>
+                        Cleaned:
+                    </td>
+                    <td>
+                        <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.CleanedBytes))" />
+                    </td>
+                </tr>
+            }
+            <tr>
+                <td>
+                    Final:
+                </td>
+                <td>
+                    <img class="cbn-image-max" src="@String.Format("data:image/png;base64,{0}", Convert.ToBase64String(Model.OutlineBytes))" />
+                </td>
+            </tr>
+        </table>
     }
 </div>
 
