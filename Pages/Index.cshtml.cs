@@ -38,6 +38,19 @@ namespace ColorByNumber.Pages
 
         private List<List<Point>> Numbers = new List<List<Point>>()
         {
+            //0
+            new List<Point>()
+            {
+                new Point(2, 0),
+                new Point(2, -1),
+                new Point(1, -2),
+                new Point(0, -2),
+                new Point(-1, -1),
+                new Point(-1, 0),
+                new Point(0, 1),
+                new Point(1, 1)
+            },
+            //1
             new List<Point>()
             {
                 new Point(0,0),
@@ -49,6 +62,7 @@ namespace ColorByNumber.Pages
                 new Point(1, 2),
                 new Point(-1, 2)
             },
+            //2
             new List<Point>()
             {
                 new Point(0,0),
@@ -60,6 +74,108 @@ namespace ColorByNumber.Pages
                 new Point(-1, 2),
                 new Point(0, 2),
                 new Point(1, 2)
+            },
+            //3
+            new List<Point>()
+            {
+                new Point(0,0),
+                new Point(1, -1),
+                new Point(1, -2),
+                new Point(0, -3),
+                new Point(-1, -2),
+                new Point(1, 1),
+                new Point(1, 2),
+                new Point(0, 3),
+                new Point(-1, 2)
+            },
+            //4
+            new List<Point>()
+            {
+                new Point(0,0),
+                new Point(0, -1),
+                new Point(0, -2),
+                new Point(-1, -1),
+                new Point(-2, 0),
+                new Point(-1, 0),
+                new Point(1, 0),
+                new Point(0, 1),
+                new Point(0, 2)
+            },
+            //5
+            new List<Point>()
+            {
+                new Point(0,0),
+                new Point(-1, 0),
+                new Point(-1, -1),
+                new Point(-1, -2),
+                new Point(0, -2),
+                new Point(1, -2),
+                new Point(1, 1),
+                new Point(1, 2),
+                new Point(0, 3),
+                new Point(-1, 2)
+            },
+            //6
+            new List<Point>()
+            {
+                new Point(0,0),
+                new Point(-1, 1),
+                new Point(-1, 0),
+                new Point(-1, -1),
+                new Point(0, -2),
+                new Point(1, -2),
+                new Point(2, -1),
+                new Point(1, 0),
+                new Point(2, 1),
+                new Point(2, 2),
+                new Point(1, 3),
+                new Point(0, 3),
+                new Point(-1, 2)
+            },
+            //7
+            new List<Point>()
+            {
+                new Point(0,0),
+                new Point(1, -1),
+                new Point(2, -2),
+                new Point(1, -2),
+                new Point(0, -2),
+                new Point(-1, -2),
+                new Point(-1, 1),
+                new Point(-2, 2)
+            },
+            //8
+            new List<Point>()
+            {
+                new Point(0,0),
+                new Point(1, -1),
+                new Point(1, -2),
+                new Point(0, -3),
+                new Point(-1, -3),
+                new Point(-2, -2),
+                new Point(-2, -1),
+                new Point(-1, 0),
+                new Point(1, 1),
+                new Point(1, 2),
+                new Point(0, 3),
+                new Point(-1, 3),
+                new Point(-2, 2),
+                new Point(-2, 1)
+            },
+            //9
+            new List<Point>()
+            {
+                new Point(0,0),
+                new Point(1, -1),
+                new Point(1, -2),
+                new Point(0, -3),
+                new Point(-1, -3),
+                new Point(-2, -2),
+                new Point(-2, -1),
+                new Point(-1, 0),
+                new Point(1, 1),
+                new Point(1, 2),
+                new Point(0, 3)
             }
         };
 
@@ -350,15 +466,15 @@ namespace ColorByNumber.Pages
                 }
             }
 
-            for (int y = 2; y < image.Height - 2; y += 10)
+            for (int y = 6; y < image.Height - 3; y += 12)
             {
-                for (int x = 2; x < image.Width - 2; x++)
+                for (int x = 6; x < image.Width - 3; x++)
                 {
                     Rgba32 currentColor = image[x, y];
                     bool same = true;
-                    for (int b = Math.Max(y - 2, 0); b <= Math.Min(y + 2, image.Height - 1); b++)
+                    for (int b = Math.Max(y - 3, 0); b <= Math.Min(y + 3, image.Height - 1); b++)
                     {
-                        for (int a = Math.Max(x - 2, 0); a <= Math.Min(x + 2, image.Width - 1); a++)
+                        for (int a = Math.Max(x - 3, 0); a <= Math.Min(x + 3, image.Width - 1); a++)
                         {
                             if (image[a, b] != currentColor)
                             {
@@ -377,17 +493,41 @@ namespace ColorByNumber.Pages
                         {
                             if (currentColor == TopColors[i].StoredColor)
                             {
-                                if (i < Numbers.Count)
+                                if (i < 10)
                                 {
-                                    foreach (var point in Numbers[i])
+                                    foreach (var point in Numbers[i+1])
                                     {
                                         outline[point.X + x, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                    }
+                                }
+                                else if (i >= 10)
+                                {
+                                    foreach(var point in Numbers[1])
+                                    {
+                                        outline[point.X + x - 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                    }
+                                    
+                                    foreach (var point in Numbers[i - 10])
+                                    {
+                                        outline[point.X + x + 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                    }
+                                }
+                                else if (i >= 20)
+                                {
+                                    foreach(var point in Numbers[2])
+                                    {
+                                        outline[point.X + x - 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                    }
+
+                                    foreach (var point in Numbers[i-20])
+                                    {
+                                        outline[point.X + x + 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
                                     }
                                 }
                             }
                         }
 
-                        x += 9;
+                        x += 11;
                     }
                 }
             }
