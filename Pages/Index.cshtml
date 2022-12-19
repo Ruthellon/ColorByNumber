@@ -23,11 +23,18 @@
             <table class="cbn-settings-table">
                 <tr>
                     <td>Normalize:</td>
-                    <td><input type="checkbox" name="Normalize" id="Normalize" asp-for="Normalize" value="true" checked="@Model.Normalize" /></td>
+                    <td>
+                        <input type="checkbox" name="Normalize" id="Normalize" asp-for="Normalize" value="true" checked="@Model.Normalize" />
+                    </td>
+                    <td>
+                        <input type="text" size="5" name="NormalizeFactor" id="NormalizeFactor" asp-for="NormalizeFactor" value="@Model.NormalizeFactor" />
+                    </td>
                 </tr>
                 <tr>
                     <td>Soften:</td>
-                    <td>            <input type="checkbox" name="Soften" id="Soften" asp-for="Soften" value="true" checked="@Model.Soften" /></td>
+                    <td>            
+                        <input type="checkbox" name="Soften" id="Soften" asp-for="Soften" value="true" checked="@Model.Soften" />
+                    </td>
                 </tr>
                 <tr>
                     <td>Clean:</td>
@@ -37,6 +44,23 @@
                     <td>Sim Distance:</td>
                     <td><input type="text" size="5" name="SimilarityDistance" id="SimilarityDistance" asp-for="SimilarityDistance" value="@Model.SimilarityDistance" /></td>
                 </tr>
+                @*<tr>
+                    <td>Email Results:</td>
+                    <td>
+                        <input type="email" size="5" name="EmailAddress" id="EmailAddress" asp-for="EmailAddress" value="@Model.EmailAddress" />
+                    </td>
+                </tr>*@
+                <tr>
+                    <td>Debug Info:</td>
+                    <td><input type="checkbox" name="ShowDebug" id="ShowDebug" asp-for="ShowDebug" value="true" checked="@Model.ShowDebug" /></td>
+                </tr>
+                @if (!String.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <tr>
+                        <td>Error Message:</td>
+                        <td><input type="checkbox" name="ShowDebug" id="ShowDebug" asp-for="ShowDebug" value="true" checked="@Model.ShowDebug" /></td>
+                    </tr>
+                }
             </table>    
         </div>
         <div class="cbn-header-content">
@@ -49,6 +73,17 @@
     @if (Model.Original != null)
     {
         <table class="cbn-results-table">
+            @if (Model.PdfBytes != null)
+            {
+                <tr>
+                    <td>
+                        Pdf:
+                    </td>
+                    <td>
+                        <object width="400" height="400" data="@String.Format("data:application/pdf;base64,{0}", Convert.ToBase64String(Model.PdfBytes))"></object>
+                    </td>
+                </tr>
+            }
             <tr>
                 <td>
                     Color Palette:

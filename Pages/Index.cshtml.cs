@@ -1,11 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ColorByNumber.Utilities;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using MimeKit;
+using PdfSharpCore.Drawing;
+using PdfSharpCore.Pdf;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using static System.Net.Mime.MediaTypeNames;
+using System.IO;
+using System.Reflection;
 
 namespace ColorByNumber.Pages
 {
@@ -19,11 +24,16 @@ namespace ColorByNumber.Pages
         [BindProperty]
         public bool Soften { get; set; } = false;
         [BindProperty]
-        public bool Clean { get; set; } = false;
+        public bool Clean { get; set; } = true;
         [BindProperty]
         public double SimilarityDistance { get; set; } = 28.0f;
         [BindProperty]
         public int NormalizeFactor { get; set; } = 50;
+        [BindProperty]
+        public bool ShowDebug { get; set; } = false;
+        [BindProperty]
+        public string EmailAddress { get; set; } = String.Empty;
+        public string ErrorMessage { get; set; } = String.Empty;
 
         public byte[] Original { get; set; }
         public byte[] NormalizedBytes { get; set; }
@@ -31,12 +41,13 @@ namespace ColorByNumber.Pages
         public byte[] PBCBytes { get; set; }
         public byte[] CleanedBytes { get; set; }
         public byte[] OutlineBytes { get; set; }
+        public byte[] PdfBytes { get; set; }
 
         public List<CIELab> TopColors { get; set; } = new List<CIELab>();
 
         private readonly ILogger<IndexModel> _logger;
 
-        private List<List<Point>> Numbers = new List<List<Point>>()
+        private readonly List<List<Point>> Numbers = new List<List<Point>>()
         {
             //0
             new List<Point>()
@@ -209,11 +220,14 @@ namespace ColorByNumber.Pages
                             {
                                 image = NormalizeImage(image, NormalizeFactor);
 
-                                using (var normalStream = new MemoryStream())
+                                if (ShowDebug)
                                 {
-                                    image.SaveAsPng(normalStream);
+                                    using (var normalStream = new MemoryStream())
+                                    {
+                                        image.SaveAsPng(normalStream);
 
-                                    NormalizedBytes = normalStream.ToArray();
+                                        NormalizedBytes = normalStream.ToArray();
+                                    }
                                 }
                             }
 
@@ -221,11 +235,14 @@ namespace ColorByNumber.Pages
                             {
                                 image = SoftenImage(image);
 
-                                using (var softenedStream = new MemoryStream())
+                                if (ShowDebug)
                                 {
-                                    image.SaveAsPng(softenedStream);
+                                    using (var softenedStream = new MemoryStream())
+                                    {
+                                        image.SaveAsPng(softenedStream);
 
-                                    SoftenedBytes = softenedStream.ToArray();
+                                        SoftenedBytes = softenedStream.ToArray();
+                                    }
                                 }
                             }
 
@@ -242,11 +259,14 @@ namespace ColorByNumber.Pages
                             {
                                 image = CleanImage(image);
 
-                                using (var cleanedStream = new MemoryStream())
+                                if (ShowDebug)
                                 {
-                                    image.SaveAsPng(cleanedStream);
+                                    using (var cleanedStream = new MemoryStream())
+                                    {
+                                        image.SaveAsPng(cleanedStream);
 
-                                    CleanedBytes = cleanedStream.ToArray();
+                                        CleanedBytes = cleanedStream.ToArray();
+                                    }
                                 }
                             }
 
@@ -259,13 +279,79 @@ namespace ColorByNumber.Pages
 
                                 OutlineBytes = outlineStream.ToArray();
                             }
+
+                            using (var resizeStream = new MemoryStream())
+                            {
+                                if (outline.Height > outline.Width)
+                                {
+                                    double multiplier = (720.0f / (double)outline.Height);
+                                    outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
+                                }
+                                else
+                                {
+                                    double multiplier = (720.0f / (double)outline.Width);
+                                    outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
+                                    outline.Mutate(y => y.Rotate(90.0f));
+                                }
+                                outline.SaveAsPng(resizeStream);
+
+                                PdfDocument document = new PdfDocument();
+                                PdfPage pageColors = document.AddPage();
+                                XGraphics gfxColors = XGraphics.FromPdfPage(pageColors);
+                                for(int i = 0; i < TopColors.Count; i++)
+                                {
+                                    gfxColors.DrawRectangle(new XSolidBrush(XColor.FromArgb(255, TopColors[i].StoredColor.R, TopColors[i].StoredColor.G, TopColors[i].StoredColor.B)), new XRect(65, 45 + (i * 20), 150, 10));
+                                    gfxColors.DrawString((i + 1).ToString(), new XFont("Verdana", 12), new XSolidBrush(XColor.FromArgb(255, 0, 0, 0)), 45, 55 + (20 * i));
+                                }
+
+                                PdfPage page = document.AddPage();
+                                XGraphics gfx = XGraphics.FromPdfPage(page);
+                                XImage xImage = XImage.FromStream(() => new MemoryStream(resizeStream.ToArray()));
+                                gfx.DrawImage(xImage, 45, 45);
+
+                                using (var pdfStream = new MemoryStream())
+                                {
+                                    document.Save(pdfStream);
+
+                                    PdfBytes = pdfStream.ToArray();
+
+                                    //if (!String.IsNullOrEmpty(EmailAddress))
+                                    //{
+                                    //    Email email = new Email();
+
+                                    //    string Body = @"<html>
+                                    //    <body>
+                                    //    {0}
+                                    //    </body>
+                                    //    </html>";
+
+                                    //    email.Subject = "PBN from Angry Elf Games";
+
+                                    //    Body = string.Format(Body, "You have a new PBN curtesy of Angry Elf Games");
+
+                                    //    email.Body = Body;
+                                    //    var mimepart = new MimePart("application/pdf");
+                                    //    mimepart.Content = new MimeContent(new MemoryStream(PdfBytes));
+                                    //    mimepart.ContentDisposition = new ContentDisposition(ContentDisposition.Attachment);
+                                    //    mimepart.ContentTransferEncoding = ContentEncoding.Base64;
+                                    //    mimepart.FileName = FormFile.FileName;
+
+                                    //    email.Attachment = mimepart;
+                                    //    email.Sender = new KeyValuePair<string, string>("Angry Elf Games", "angryelfstudios@gmail.com");
+                                    //    email.ReplyTo = new KeyValuePair<string, string>("Angry Elf Games", "angryelfstudios@dynamictrend.com");
+                                    //    email.To.Add(new KeyValuePair<string, string>(EmailAddress, EmailAddress));
+
+                                    //    await email.Send();
+                                    //}
+                                }
+                            }
                         }
                     }
                 }
             }
             catch (Exception e)
             {
-
+                ErrorMessage = e.Message;
             }
             return Page();
         }
@@ -466,70 +552,79 @@ namespace ColorByNumber.Pages
                 }
             }
 
-            for (int y = 6; y < image.Height - 3; y += 12)
+            try
             {
-                for (int x = 6; x < image.Width - 3; x++)
+                for (int y = 6; y < image.Height - 6; y += 12)
                 {
-                    Rgba32 currentColor = image[x, y];
-                    bool same = true;
-                    for (int b = Math.Max(y - 3, 0); b <= Math.Min(y + 3, image.Height - 1); b++)
+                    for (int x = 6; x < image.Width - 6; x++)
                     {
-                        for (int a = Math.Max(x - 3, 0); a <= Math.Min(x + 3, image.Width - 1); a++)
+                        Rgba32 currentColor = image[x, y];
+                        bool same = true;
+                        for (int b = Math.Max(y - 3, 0); b <= Math.Min(y + 3, image.Height - 1); b++)
                         {
-                            if (image[a, b] != currentColor)
+                            for (int a = Math.Max(x - 3, 0); a <= Math.Min(x + 3, image.Width - 1); a++)
                             {
-                                same = false;
+                                if (image[a, b] != currentColor)
+                                {
+                                    same = false;
+                                    break;
+                                }
+                            }
+
+                            if (!same)
                                 break;
-                            }
                         }
 
-                        if (!same)
-                            break;
-                    }
-
-                    if (same)
-                    {
-                        for (int i = 0; i < TopColors.Count; i++)
+                        if (same)
                         {
-                            if (currentColor == TopColors[i].StoredColor)
+                            for (int i = 0; i < TopColors.Count; i++)
                             {
-                                if (i < 10)
+                                if (currentColor == TopColors[i].StoredColor)
                                 {
-                                    foreach (var point in Numbers[i+1])
+                                    i++;
+                                    if (i < 10)
                                     {
-                                        outline[point.X + x, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                        foreach (var point in Numbers[i])
+                                        {
+                                            outline[point.X + x, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                        }
                                     }
-                                }
-                                else if (i >= 10)
-                                {
-                                    foreach(var point in Numbers[1])
+                                    else if (i >= 20)
                                     {
-                                        outline[point.X + x - 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
-                                    }
-                                    
-                                    foreach (var point in Numbers[i - 10])
-                                    {
-                                        outline[point.X + x + 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
-                                    }
-                                }
-                                else if (i >= 20)
-                                {
-                                    foreach(var point in Numbers[2])
-                                    {
-                                        outline[point.X + x - 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
-                                    }
+                                        foreach (var point in Numbers[2])
+                                        {
+                                            outline[point.X + x - 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                        }
 
-                                    foreach (var point in Numbers[i-20])
-                                    {
-                                        outline[point.X + x + 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                        foreach (var point in Numbers[i - 20])
+                                        {
+                                            outline[point.X + x + 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                        }
                                     }
+                                    else if (i >= 10)
+                                    {
+                                        foreach (var point in Numbers[1])
+                                        {
+                                            outline[point.X + x - 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                        }
+
+                                        foreach (var point in Numbers[i - 10])
+                                        {
+                                            outline[point.X + x + 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                        }
+                                    }
+                                    break;
                                 }
                             }
-                        }
 
-                        x += 11;
+                            x += 11;
+                        }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+
             }
 
             return outline;
