@@ -200,28 +200,13 @@ namespace ColorByNumber.Pages
 
         public class Point
         {
-            public bool Covered { get; set; } = false;
-            public Rgba32 Color { get; set; }
             public int X { get; set; }
             public int Y { get; set; }
-            public int RegionNumber { get; set; } = -1;
 
             public Point(int x, int y)
             {
                 X = x;
                 Y = y;
-            }
-
-            public Point(Rgba32 color)
-            {
-                Color = color;
-            }
-
-            public Point(int x, int y, Rgba32 color)
-            {
-                X = x;
-                Y = y;
-                Color = color;
             }
         }
 
@@ -291,25 +276,25 @@ namespace ColorByNumber.Pages
 
                             image = ProcessImage(image);
 
-                            using (var processedStream = new MemoryStream())
+                            if (!Clean || ShowDebug)
                             {
-                                image.SaveAsPng(processedStream);
+                                using (var processedStream = new MemoryStream())
+                                {
+                                    image.SaveAsPng(processedStream);
 
-                                PBCBytes = processedStream.ToArray();
+                                    PBCBytes = processedStream.ToArray();
+                                }
                             }
 
                             if (Clean)
                             {
                                 image = CleanImage(image);
 
-                                if (ShowDebug)
+                                using (var cleanedStream = new MemoryStream())
                                 {
-                                    using (var cleanedStream = new MemoryStream())
-                                    {
-                                        image.SaveAsPng(cleanedStream);
+                                    image.SaveAsPng(cleanedStream);
 
-                                        CleanedBytes = cleanedStream.ToArray();
-                                    }
+                                    CleanedBytes = cleanedStream.ToArray();
                                 }
                             }
 
@@ -323,45 +308,63 @@ namespace ColorByNumber.Pages
                                 OutlineBytes = outlineStream.ToArray();
                             }
 
+                            if (resizeToPdf)
+                            {
+                                if (outline.Height > outline.Width)
+                                {
+                                    double multiplier = (720.0f / (double)outline.Height);
+                                    outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
+                                    image.Mutate(x => x.Resize(Convert.ToInt32(image.Width * multiplier), Convert.ToInt32(image.Height * multiplier)));
+
+                                }
+                                else
+                                {
+                                    double multiplier = (720.0f / (double)outline.Width);
+                                    outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
+                                    outline.Mutate(y => y.Rotate(90.0f));
+                                    image.Mutate(x => x.Resize(Convert.ToInt32(image.Width * multiplier), Convert.ToInt32(image.Height * multiplier)));
+                                    image.Mutate(y => y.Rotate(90.0f));
+                                }
+                            }
+
+                            byte[] resizedOutline = null;
+                            byte[] resizedPBN = null;
                             using (var resizeStream = new MemoryStream())
                             {
-                                if (resizeToPdf)
-                                {
-                                    if (outline.Height > outline.Width)
-                                    {
-                                        double multiplier = (720.0f / (double)outline.Height);
-                                        outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
-                                    }
-                                    else
-                                    {
-                                        double multiplier = (720.0f / (double)outline.Width);
-                                        outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
-                                        outline.Mutate(y => y.Rotate(90.0f));
-                                    }
-                                }
-
                                 outline.SaveAsPng(resizeStream);
+                                resizedOutline = resizeStream.ToArray();
+                            }
 
-                                PdfDocument document = new PdfDocument();
-                                PdfPage pageColors = document.AddPage();
-                                XGraphics gfxColors = XGraphics.FromPdfPage(pageColors);
-                                for(int i = 0; i < TopColors.Count; i++)
-                                {
-                                    gfxColors.DrawRectangle(new XSolidBrush(XColor.FromArgb(255, TopColors[i].StoredColor.R, TopColors[i].StoredColor.G, TopColors[i].StoredColor.B)), new XRect(65, 45 + (i * 20), 150, 10));
-                                    gfxColors.DrawString((i + 1).ToString(), new XFont("Verdana", 12), new XSolidBrush(XColor.FromArgb(255, 0, 0, 0)), 45, 55 + (20 * i));
-                                }
+                            using (var resizeStream = new MemoryStream())
+                            {
+                                image.SaveAsPng(resizeStream);
+                                resizedPBN = resizeStream.ToArray();
+                            }
 
-                                PdfPage page = document.AddPage();
-                                XGraphics gfx = XGraphics.FromPdfPage(page);
-                                XImage xImage = XImage.FromStream(() => new MemoryStream(resizeStream.ToArray()));
-                                gfx.DrawImage(xImage, 45, 45);
+                            PdfDocument document = new PdfDocument();
+                            PdfPage pageColors = document.AddPage();
+                            XGraphics gfxColors = XGraphics.FromPdfPage(pageColors);
+                            for (int i = 0; i < TopColors.Count; i++)
+                            {
+                                gfxColors.DrawRectangle(new XSolidBrush(XColor.FromArgb(255, TopColors[i].StoredColor.R, TopColors[i].StoredColor.G, TopColors[i].StoredColor.B)), new XRect(65, 45 + (i * 20), 150, 10));
+                                gfxColors.DrawString((i + 1).ToString(), new XFont("Verdana", 12), new XSolidBrush(XColor.FromArgb(255, 0, 0, 0)), 45, 55 + (20 * i));
+                            }
 
-                                using (var pdfStream = new MemoryStream())
-                                {
-                                    document.Save(pdfStream);
+                            PdfPage page = document.AddPage();
+                            XGraphics gfx = XGraphics.FromPdfPage(page);
+                            XImage xImage = XImage.FromStream(() => new MemoryStream(resizedOutline));
+                            gfx.DrawImage(xImage, 45, 45);
 
-                                    PdfBytes = pdfStream.ToArray();
-                                }
+                            PdfPage imagePage = document.AddPage();
+                            XGraphics imagegfx = XGraphics.FromPdfPage(imagePage);
+                            XImage imagexImage = XImage.FromStream(() => new MemoryStream(resizedPBN));
+                            imagegfx.DrawImage(imagexImage, 45, 45);
+
+                            using (var pdfStream = new MemoryStream())
+                            {
+                                document.Save(pdfStream);
+
+                                PdfBytes = pdfStream.ToArray();
                             }
                         }
                     }
@@ -443,26 +446,6 @@ namespace ColorByNumber.Pages
                     if (currentColorCount < 4)
                     {
                         cleaned[x, y] = colors.OrderByDescending(z => z.Value).FirstOrDefault().Key;
-                    }
-                    else if (currentColorCount < 9)
-                    {
-                        colors.Clear();
-                        for (int b = Math.Max(y - 2, 0); b <= Math.Min(y + 2, image.Height - 1); b++)
-                        {
-                            for (int a = Math.Max(x - 2, 0); a <= Math.Min(x + 2, image.Width - 1); a++)
-                            {
-                                if (colors.ContainsKey(image[a, b]))
-                                    colors[image[a, b]]++;
-                                else
-                                    colors.Add(image[a, b], 1);
-                            }
-                        }
-
-                        currentColorCount = colors.Where(z => z.Key == image[x, y]).FirstOrDefault().Value;
-                        if (currentColorCount < 9)
-                        {
-                            cleaned[x, y] = colors.OrderByDescending(z => z.Value).Where(zz => zz.Key != image[x, y]).FirstOrDefault().Key;
-                        }
                     }
                 }
             }
@@ -557,8 +540,6 @@ namespace ColorByNumber.Pages
 
                     if (x > 3 && y > 3 && x < image.Width - 3 && y < image.Height - 3 && (x > (previousX + 10) || y > (previousY + 10)))
                     {
-                        previousX = x;
-                        previousY = y;
                         Rgba32 currentColor = image[x, y];
                         bool same = true;
                         for (int b = Math.Max(y - 2, 0); b <= Math.Min(y + 2, image.Height - 1); b++)
@@ -578,6 +559,8 @@ namespace ColorByNumber.Pages
 
                         if (same)
                         {
+                            previousX = x;
+                            previousY = y;
                             for (int i = 0; i < TopColors.Count; i++)
                             {
                                 if (currentColor == TopColors[i].StoredColor)
