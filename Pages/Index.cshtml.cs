@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Org.BouncyCastle.Math.EC.Multiplier;
 using PdfSharpCore.Drawing;
 using PdfSharpCore.Pdf;
 using SixLabors.ImageSharp;
@@ -21,6 +22,10 @@ namespace ColorByNumber.Pages
         public bool Soften { get; set; } = false;
         [BindProperty]
         public bool Clean { get; set; } = true;
+        [BindProperty]
+        public bool Resize { get; set; } = true;
+        [BindProperty]
+        public bool PdfOnly { get; set; } = false;
         [BindProperty]
         public double SimilarityDistance { get; set; } = 28.0f;
         [BindProperty]
@@ -241,10 +246,27 @@ namespace ColorByNumber.Pages
                         await FormFile.CopyToAsync(memoryStream);
 
                         Original = memoryStream.ToArray();
+                        bool resizeToPdf = true;
 
                         using (var img = Image<Rgba32>.Load<Rgba32>(memoryStream.ToArray()))
                         {
                             Image<Rgba32> image = img;
+
+                            if (Resize && (image.Height > 720 || image.Width > 720))
+                            {
+                                double multiplier = .5f;
+                                if (image.Height > image.Width)
+                                {
+                                    multiplier = (720.0f / (double)image.Height);
+                                }
+                                else
+                                {
+                                    multiplier = (720.0f / (double)image.Width);
+                                }
+                                resizeToPdf = false;
+                                image.Mutate(x => x.Resize(Convert.ToInt32(image.Width * multiplier), Convert.ToInt32(image.Height * multiplier)));
+                            }
+
                             if (Normalize)
                             {
                                 image = NormalizeImage(image, NormalizeFactor);
@@ -313,17 +335,21 @@ namespace ColorByNumber.Pages
 
                             using (var resizeStream = new MemoryStream())
                             {
-                                if (outline.Height > outline.Width)
+                                if (resizeToPdf)
                                 {
-                                    double multiplier = (720.0f / (double)outline.Height);
-                                    outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
+                                    if (outline.Height > outline.Width)
+                                    {
+                                        double multiplier = (720.0f / (double)outline.Height);
+                                        outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
+                                    }
+                                    else
+                                    {
+                                        double multiplier = (720.0f / (double)outline.Width);
+                                        outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
+                                        outline.Mutate(y => y.Rotate(90.0f));
+                                    }
                                 }
-                                else
-                                {
-                                    double multiplier = (720.0f / (double)outline.Width);
-                                    outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
-                                    outline.Mutate(y => y.Rotate(90.0f));
-                                }
+
                                 outline.SaveAsPng(resizeStream);
 
                                 PdfDocument document = new PdfDocument();
@@ -384,6 +410,10 @@ namespace ColorByNumber.Pages
             {
                 ErrorMessage = e.Message;
             }
+
+            if (PdfOnly)
+                return File(PdfBytes, "application/pdf");
+
             return Page();
         }
 

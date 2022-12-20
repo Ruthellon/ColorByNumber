@@ -51,6 +51,18 @@
                     </td>
                 </tr>*@
                 <tr>
+                    <td>Resize First:</td>
+                    <td>
+                        <input type="checkbox" name="Resize" id="Resize" asp-for="Resize" value="true" checked="@Model.Resize" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>PDF Only:</td>
+                    <td>
+                        <input type="checkbox" name="PdfOnly" id="PdfOnly" asp-for="PdfOnly" value="true" checked="@Model.PdfOnly" />
+                    </td>
+                </tr>
+                <tr>
                     <td>Debug Info:</td>
                     <td><input type="checkbox" name="ShowDebug" id="ShowDebug" asp-for="ShowDebug" value="true" checked="@Model.ShowDebug" /></td>
                 </tr>
@@ -84,17 +96,20 @@
                     </td>
                 </tr>
             }
-            <tr>
-                <td>
-                    Color Palette:
-                </td>
-                <td>
-                    @for (int i = 0; i < Model.TopColors.Count; i++)
-                    {
-                        <div style="background-color:#@Model.TopColors[i].StoredColor.ToHex().Remove(6,2)">@(i+1)</div>
-                    }
-                </td>
-            </tr>
+            @if (Model.ShowDebug)
+            {
+                <tr>
+                    <td>
+                        Color Palette:
+                    </td>
+                    <td>
+                        @for (int i = 0; i < Model.TopColors.Count; i++)
+                        {
+                            <div style="background-color:#@Model.TopColors[i].StoredColor.ToHex().Remove(6,2)">@(i+1)</div>
+                        }
+                    </td>
+                </tr>
+            }
             <tr>
                 <td>
                     Original:
@@ -161,6 +176,38 @@
         </table>
     }
 </div>
-
+<div>
+    <p>
+    Info about each of the options:
+    </p>
+    <p>
+        Normalize - This will round each RGB value to the nearest <i>N</i> value specified (eg 57, 123, 245 rounded to nearest 50 will result in 50, 100, 250).<br />
+                    This slightly alters each color present, but allows the algorithm to have a smaller selection of colors to choose from. Default is off.
+    </p>
+    <p>
+        Soften - This will go through pixel by pixel and round each pixel to the average of its neighbors.<br />
+                 This results in a slightly blurred image with the goal of allowing the algorithm to again have a smaller selection of colors to choose from. Default is off.
+    </p>
+    <p>
+        Clean - A quick algorithm that goes through and removes any insignificant areas of color (ie color areas that are smaller than 4 pixels).<br />
+            Default is on.
+    </p>
+    <p>
+        Sim Distance - AKA Similarity Distance is the value used to determine whether two colors are similar. The lower the number the more similar colors must be as determined by their CIELAB color.<br />
+                   Lower this number if you want more colors, raise it if you want want fewer. Default is 28.0.
+    </p>
+    <p>
+        Resize First - This will resize the image to it's final size before calculations (Final size is scaled to fit a 720px x 960px pdf document).<br />
+                   On means a faster calculation, but less detailed result. Default is on.
+    </p>
+    <p>
+        PDF Only - This will return the PDF document to be saved, good for mobile users.<br />
+               Default is off.
+    </p>
+    <p>
+        Debug Info - Slightly misleading as this doesn't really provide any true debug info. If on, it will return all the different stages instead of just the original, and final result (eg it will also return the Normalized image if on).<br />
+        Default is off.
+    </p>
+</div>
 
 

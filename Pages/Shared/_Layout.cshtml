@@ -23,7 +23,9 @@
 
     <footer class="border-top text-muted cbn-footer">
         <div class="container-fluid">
-            &copy; @DateTime.Now.Year - Angry Elf Games
+            &copy; @DateTime.Now.Year - Angry Elf Games 
+            <br />
+            Version: @GetType().Assembly.GetName().Version.ToString(3)
         </div>
     </footer>
 
