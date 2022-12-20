@@ -76,11 +76,11 @@ body {
     column-gap: 40px;
     /*grid-template-columns: 300px 250px 200px;*/
     grid-template-columns: repeat(auto-fit, minmax(200px, 300px));
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     margin-top: 0px;
     padding-left: 0px;
-    padding-bottom: 35px;
-    margin-left: 50px;
+    padding-bottom: 0px;
+    margin-left: 20px;
 }
 
 .cbn-header-content {
@@ -141,6 +141,24 @@ body {
         background-color: #6EDE00;
     }
 
+.cbn-button-instructions {
+    background-color: #F7D065;
+    color: #000000;
+    padding: 5px 15px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 5px;
+    border-style: none;
+    outline: none;
+    box-shadow: 1px 7px 14px -5px rgba(0,0,0,0.2);
+    transition: all .4s ease;
+}
+
+    .cbn-button-instructions:hover {
+        background-color: #6EDE00;
+    }
+
 /* Custom Input File Button Style
 -------------------------------------------------- */
 input[type="file"]::file-selector-button {
@@ -195,6 +213,18 @@ input[type="file"]::file-selector-button {
 .cbn-image-max {
     height: auto;
     max-width:100%;
+}
+
+.cbn-button-panel {
+    margin-left: 20px;
+    padding-bottom: 20px;
+}
+
+.cbn-instructions {
+    color: #ffffff;
+    padding: 0px 20px;
+    padding-bottom:20px;
+    font-size: 16px;
 }
 
 /* Custom Header Menu
