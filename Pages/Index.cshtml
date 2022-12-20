@@ -13,15 +13,15 @@
     }
     
     $(document).ready(function() {
-        $("#cbnbuttoninstructions").click(function(){
-            var x = document.getElementById("cbn-instructions");
-            var y = document.getElementById("cbnbuttoninstructions");
+        $("#cbnbuttoninformation").click(function(){
+            var x = document.getElementById("cbn-information");
+            var y = document.getElementById("cbnbuttoninformation");
             if (x.style.display === "none") {
                 x.style.display = "block";
-                y.value ="Hide Instructions";
+                y.value ="Hide Information";
             } else {
                 x.style.display = "none";
-                y.value ="Show Instructions";
+                y.value ="Show Information";
             }
         }); 
     });
@@ -96,9 +96,9 @@
 </div>
 </form>
 <div class="cbn-button-panel">
-    <input id="cbnbuttoninstructions" class="cbn-button-instructions" type="button" value="Show Instructions" />
+    <input id="cbnbuttoninformation" class="cbn-button-information" type="button" value="Show Information" />
 </div>
-<div id="cbn-instructions" class="cbn-instructions" style="display:none;">
+<div id="cbn-information" class="cbn-information" style="display:none;">
     <p>
         <b>Info about each of the options:</b>
     </p>
