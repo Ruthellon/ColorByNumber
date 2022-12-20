@@ -32,8 +32,6 @@ namespace ColorByNumber.Pages
         public int NormalizeFactor { get; set; } = 50;
         [BindProperty]
         public bool ShowDebug { get; set; } = false;
-        [BindProperty]
-        public string EmailAddress { get; set; } = String.Empty;
         public string ErrorMessage { get; set; } = String.Empty;
 
         public byte[] Original { get; set; }
@@ -42,7 +40,6 @@ namespace ColorByNumber.Pages
         public byte[] PBCBytes { get; set; }
         public byte[] CleanedBytes { get; set; }
         public byte[] OutlineBytes { get; set; }
-        [BindProperty]
         public byte[] PdfBytes { get; set; }
 
         public List<CIELab> TopColors { get; set; } = new List<CIELab>();
@@ -228,11 +225,6 @@ namespace ColorByNumber.Pages
             }
         }
 
-        //List<List<Point>> points = new List<List<Point>>();
-
-        //List<List<Point>> regions = new List<List<Point>>();
-        //List<Point> labelLocations = new List<Point>();
-
         public async Task<IActionResult> OnPostUpload()
         {
             try
@@ -321,8 +313,6 @@ namespace ColorByNumber.Pages
                                 }
                             }
 
-                            //GetRegions(image);
-
                             var outline = GetOutlines(image);
 
                             using (var outlineStream = new MemoryStream())
@@ -371,35 +361,6 @@ namespace ColorByNumber.Pages
                                     document.Save(pdfStream);
 
                                     PdfBytes = pdfStream.ToArray();
-
-                                    //if (!String.IsNullOrEmpty(EmailAddress))
-                                    //{
-                                    //    Email email = new Email();
-
-                                    //    string Body = @"<html>
-                                    //    <body>
-                                    //    {0}
-                                    //    </body>
-                                    //    </html>";
-
-                                    //    email.Subject = "PBN from Angry Elf Games";
-
-                                    //    Body = string.Format(Body, "You have a new PBN curtesy of Angry Elf Games");
-
-                                    //    email.Body = Body;
-                                    //    var mimepart = new MimePart("application/pdf");
-                                    //    mimepart.Content = new MimeContent(new MemoryStream(PdfBytes));
-                                    //    mimepart.ContentDisposition = new ContentDisposition(ContentDisposition.Attachment);
-                                    //    mimepart.ContentTransferEncoding = ContentEncoding.Base64;
-                                    //    mimepart.FileName = FormFile.FileName;
-
-                                    //    email.Attachment = mimepart;
-                                    //    email.Sender = new KeyValuePair<string, string>("Angry Elf Games", "angryelfstudios@gmail.com");
-                                    //    email.ReplyTo = new KeyValuePair<string, string>("Angry Elf Games", "angryelfstudios@dynamictrend.com");
-                                    //    email.To.Add(new KeyValuePair<string, string>(EmailAddress, EmailAddress));
-
-                                    //    await email.Send();
-                                    //}
                                 }
                             }
                         }
@@ -573,73 +534,6 @@ namespace ColorByNumber.Pages
 
             return processedImage;
         }
-
-        //private void GetRegions(Image<Rgba32> image)
-        //{
-        //    points = new List<List<Point>>();
-        //    for (int y = 0; y < image.Height; y++)
-        //    {
-        //        List<Point> row = new List<Point>();
-        //        for (int x = 0; x < image.Height; x++)
-        //        {
-        //            row.Add(new Point(x,y,image[x,y]));
-        //        }
-
-        //        points.Add(row);
-        //    }
-
-        //    int regionCount = 0;
-
-        //    List<List<Point>> regions = new List<List<Point>>();
-        //    try
-        //    {
-        //        for (int y = 0; y < points.Count; y++)
-        //        {
-        //            for (int x = 0; x < points[y].Count; x++)
-        //            {
-        //                if (!points[y][x].Covered)
-        //                {
-        //                    regionCount++;
-        //                    Rgba32 regionColor = points[y][x].Color;
-        //                    Queue<Point> queue = new Queue<Point>();
-        //                    List<Point> region = new List<Point>();
-        //                    queue.Enqueue(points[y][x]);
-        //                    while (queue.Count > 0)
-        //                    {
-        //                        var coord = queue.Dequeue();
-        //                        if (coord.Covered == false && coord.Color == regionColor)
-        //                        {
-        //                            region.Add(coord);
-        //                            coord.Covered = true;
-        //                            coord.RegionNumber = regionCount;
-        //                            if (coord.X > 0)
-        //                                queue.Enqueue(points[coord.X - 1][coord.Y]);
-        //                            if (coord.X < points[y].Count - 1)
-        //                                queue.Enqueue(points[coord.X + 1][coord.Y]);
-        //                            if (coord.Y > 0)
-        //                                queue.Enqueue(points[coord.X][coord.Y - 1]);
-        //                            if (coord.Y < points.Count - 1)
-        //                                queue.Enqueue(points[coord.X][coord.Y + 1]);
-        //                        }
-        //                    }
-
-        //                    if (region.Count < 10)
-        //                    {
-
-        //                    }
-        //                    else
-        //                    {
-        //                        regions.Add(region);
-        //                    }
-        //                }
-        //            }
-        //        }
-        //    }
-        //    catch (Exception e)
-        //    {
-
-        //    }
-        //}
 
         private Image<Rgba32> GetOutlines(Image<Rgba32> image)
         {
