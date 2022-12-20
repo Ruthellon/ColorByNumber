@@ -1,7 +1,5 @@
-﻿using ColorByNumber.Utilities;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using MimeKit;
 using PdfSharpCore.Drawing;
 using PdfSharpCore.Pdf;
 using SixLabors.ImageSharp;
@@ -9,8 +7,6 @@ using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using System.IO;
-using System.Reflection;
 
 namespace ColorByNumber.Pages
 {
@@ -41,6 +37,7 @@ namespace ColorByNumber.Pages
         public byte[] PBCBytes { get; set; }
         public byte[] CleanedBytes { get; set; }
         public byte[] OutlineBytes { get; set; }
+        [BindProperty]
         public byte[] PdfBytes { get; set; }
 
         public List<CIELab> TopColors { get; set; } = new List<CIELab>();
@@ -199,6 +196,38 @@ namespace ColorByNumber.Pages
         {
         }
 
+        public class Point
+        {
+            public bool Covered { get; set; } = false;
+            public Rgba32 Color { get; set; }
+            public int X { get; set; }
+            public int Y { get; set; }
+            public int RegionNumber { get; set; } = -1;
+
+            public Point(int x, int y)
+            {
+                X = x;
+                Y = y;
+            }
+
+            public Point(Rgba32 color)
+            {
+                Color = color;
+            }
+
+            public Point(int x, int y, Rgba32 color)
+            {
+                X = x;
+                Y = y;
+                Color = color;
+            }
+        }
+
+        //List<List<Point>> points = new List<List<Point>>();
+
+        //List<List<Point>> regions = new List<List<Point>>();
+        //List<Point> labelLocations = new List<Point>();
+
         public async Task<IActionResult> OnPostUpload()
         {
             try
@@ -269,6 +298,8 @@ namespace ColorByNumber.Pages
                                     }
                                 }
                             }
+
+                            //GetRegions(image);
 
                             var outline = GetOutlines(image);
 
@@ -513,56 +544,102 @@ namespace ColorByNumber.Pages
             return processedImage;
         }
 
+        //private void GetRegions(Image<Rgba32> image)
+        //{
+        //    points = new List<List<Point>>();
+        //    for (int y = 0; y < image.Height; y++)
+        //    {
+        //        List<Point> row = new List<Point>();
+        //        for (int x = 0; x < image.Height; x++)
+        //        {
+        //            row.Add(new Point(x,y,image[x,y]));
+        //        }
+
+        //        points.Add(row);
+        //    }
+
+        //    int regionCount = 0;
+
+        //    List<List<Point>> regions = new List<List<Point>>();
+        //    try
+        //    {
+        //        for (int y = 0; y < points.Count; y++)
+        //        {
+        //            for (int x = 0; x < points[y].Count; x++)
+        //            {
+        //                if (!points[y][x].Covered)
+        //                {
+        //                    regionCount++;
+        //                    Rgba32 regionColor = points[y][x].Color;
+        //                    Queue<Point> queue = new Queue<Point>();
+        //                    List<Point> region = new List<Point>();
+        //                    queue.Enqueue(points[y][x]);
+        //                    while (queue.Count > 0)
+        //                    {
+        //                        var coord = queue.Dequeue();
+        //                        if (coord.Covered == false && coord.Color == regionColor)
+        //                        {
+        //                            region.Add(coord);
+        //                            coord.Covered = true;
+        //                            coord.RegionNumber = regionCount;
+        //                            if (coord.X > 0)
+        //                                queue.Enqueue(points[coord.X - 1][coord.Y]);
+        //                            if (coord.X < points[y].Count - 1)
+        //                                queue.Enqueue(points[coord.X + 1][coord.Y]);
+        //                            if (coord.Y > 0)
+        //                                queue.Enqueue(points[coord.X][coord.Y - 1]);
+        //                            if (coord.Y < points.Count - 1)
+        //                                queue.Enqueue(points[coord.X][coord.Y + 1]);
+        //                        }
+        //                    }
+
+        //                    if (region.Count < 10)
+        //                    {
+
+        //                    }
+        //                    else
+        //                    {
+        //                        regions.Add(region);
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception e)
+        //    {
+
+        //    }
+        //}
+
         private Image<Rgba32> GetOutlines(Image<Rgba32> image)
         {
             Image<Rgba32> outline = new Image<Rgba32>(image.Width, image.Height);
+            int previousX = 0;
+            int previousY = 0;
 
-            //for (int y = 0; y < image.Height; y++)
-            //{
-            //    for (int x = 1; x < image.Width; x++)
-            //    {
-            //        Rgba32 color = image[x, y];
-            //        outline[x, y] = new Rgba32(color.R, color.G, color.B, (byte)32);
-            //    }
-            //}
-
-            for (int y = 0; y < image.Height; y++)
+            for (int y = 1; y < image.Height; y++)
             {
                 for (int x = 1; x < image.Width; x++)
                 {
                     if (image[x, y] != image[x - 1, y])
                     {
                         outline[x, y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)128);
-                        x++;
-                        continue;
                     }
-                }
-            }
 
-            for (int x = 0; x < image.Width; x++)
-            {
-                for (int y = 1; y < image.Height; y++)
-                {
                     if (image[x, y] != image[x, y - 1])
                     {
                         outline[x, y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)128);
-                        y++;
-                        continue;
                     }
-                }
-            }
 
-            try
-            {
-                for (int y = 6; y < image.Height - 6; y += 12)
-                {
-                    for (int x = 6; x < image.Width - 6; x++)
+                    if (x > 3 && y > 3 && x < image.Width - 3 && y < image.Height - 3 && (x > (previousX + 10) || y > (previousY + 10)))
                     {
+                        previousX = x;
+                        previousY = y;
                         Rgba32 currentColor = image[x, y];
                         bool same = true;
-                        for (int b = Math.Max(y - 3, 0); b <= Math.Min(y + 3, image.Height - 1); b++)
+                        for (int b = Math.Max(y - 2, 0); b <= Math.Min(y + 2, image.Height - 1); b++)
                         {
-                            for (int a = Math.Max(x - 3, 0); a <= Math.Min(x + 3, image.Width - 1); a++)
+                            for (int a = Math.Max(x - 2, 0); a <= Math.Min(x + 2, image.Width - 1); a++)
                             {
                                 if (image[a, b] != currentColor)
                                 {
@@ -616,15 +693,9 @@ namespace ColorByNumber.Pages
                                     break;
                                 }
                             }
-
-                            x += 11;
                         }
                     }
                 }
-            }
-            catch (Exception e)
-            {
-
             }
 
             return outline;
@@ -648,17 +719,6 @@ namespace ColorByNumber.Pages
         private double DistanceBetweenColors(CIELab pixel1, CIELab pixel2)
         {
             return Math.Sqrt(Math.Pow(pixel1.L - pixel2.L, 2.0f) + Math.Pow(pixel1.A - pixel2.A, 2.0f) + Math.Pow(pixel1.B - pixel2.B, 2.0f));
-        }
-
-        public class Point
-        {
-            public int X { get; }
-            public int Y { get; }
-            public Point (int x, int y)
-            {
-                X = x;
-                Y = y;
-            }
         }
 
         public class XYZ
