@@ -85,10 +85,10 @@
     }
 </script>
 <form enctype="multipart/form-data" method="post" onsubmit="disableUploadButton()">
-<div class="cbn-header-container">
+    <div class="cbn-header-container">
         <div class="cbn-header-content">
             <span class="cbn-header-content-title">Step 1: &nbsp;Select Image File</span>
-            <input asp-for="FormFile" type="file">
+            <input id="FormFile" name="FormFile" asp-for="FormFile" value="@Model.FormFile" type="file" accept=".jpg,.jpeg,.png,.bmp">
         </div>
         <div class="cbn-header-content">
             <span class="cbn-header-content-title">Step 2: &nbsp;Select Settings</span>
@@ -98,8 +98,11 @@
                     <td>
                         <input type="checkbox" name="Normalize" id="Normalize" asp-for="Normalize" value="true" checked="@Model.Normalize" />
                     </td>
+                </tr>
+                <tr>
+                    <td>Normalize Value:</td>
                     <td>
-                        <input type="number" size="5" name="NormalizeFactor" id="NormalizeFactor" asp-for="NormalizeFactor" value="@Model.NormalizeFactor" />
+                        <input type="number" name="NormalizeFactor" id="NormalizeFactor" asp-for="NormalizeFactor" value="@Model.NormalizeFactor" />
                     </td>
                 </tr>
                 <tr>
@@ -114,7 +117,7 @@
                 </tr>
                 <tr>
                     <td>Sim Distance:</td>
-                    <td><input type="number" size="5" name="SimilarityDistance" id="SimilarityDistance" asp-for="SimilarityDistance" value="@Model.SimilarityDistance" /></td>
+                    <td><input type="number" name="SimilarityDistance" id="SimilarityDistance" asp-for="SimilarityDistance" value="@Model.SimilarityDistance" /></td>
                 </tr>
                 @*<tr>
                     <td>Email Results:</td>
@@ -131,7 +134,7 @@
                 <tr>
                     <td>Outline Darkness:</td>
                     <td>
-                        <input type="number" size="5" name="OutlineDarkness" id="OutlineDarkness" asp-for="OutlineDarkness" checked="@Model.OutlineDarkness" />
+                        <input type="number" name="OutlineDarkness" id="OutlineDarkness" asp-for="OutlineDarkness" checked="@Model.OutlineDarkness" />
                     </td>
                 </tr>
                 <tr>
@@ -163,7 +166,7 @@
                 <span class="cbn-header-content-title">Step 3: &nbsp;Upload</span>
                 <input asp-page-handler="Upload" id="Upload" class="cbn-button-upload" type="submit" value="Upload" />
         </div>
-</div>
+    </div>
 </form>
 <div class="cbn-button-panel">
     <input id="cbnbuttoninformation" class="cbn-button-information" type="button" value="Show Information" />
