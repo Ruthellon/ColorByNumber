@@ -91,12 +91,6 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>PDF Only:</td>
-                    <td>
-                        <input type="checkbox" name="PdfOnly" id="PdfOnly" asp-for="PdfOnly" value="true" checked="@Model.PdfOnly" />
-                    </td>
-                </tr>
-                <tr>
                     <td>Debug Info:</td>
                     <td><input type="checkbox" name="ShowDebug" id="ShowDebug" asp-for="ShowDebug" value="true" checked="@Model.ShowDebug" /></td>
                 </tr>
@@ -159,10 +153,6 @@
                    On means a faster calculation, but less detailed result. Default is on.
     </p>
     <p>
-        <b>PDF Only -</b> This will return the PDF document to be saved, good for mobile users.<br />
-               Default is off.
-    </p>
-    <p>
         <b>Debug Info -</b> Slightly misleading as this doesn't really provide any true debug info. If on, it will return all the different stages instead of just the original, and final result (eg it will also return the Normalized image if on).<br />
         Default is off.
     </p>
@@ -171,15 +161,13 @@
     @if (Model.Original != null)
     {
         <table class="cbn-results-table">
-            @if (Model.PdfBytes != null)
-            {
-                <tr><td>Pdf:</td></tr>
-                <tr>
-                    <td>
-                        <object width="400" height="400" data="@String.Format("data:application/pdf;base64,{0}", Convert.ToBase64String(Model.PdfBytes))"></object>
-                    </td>
-                </tr>
-            }
+            <tr>
+                <td>
+                    <a href="@String.Format("data:application/pdf;base64,{0}", Model.PdfDocument)" download>
+                        Download PDF
+                    </a>
+                </td>
+            </tr>
             @if (Model.ShowDebug)
             {
                 <tr><td>Color Palette:</td></tr>

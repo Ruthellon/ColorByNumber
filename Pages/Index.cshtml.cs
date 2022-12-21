@@ -87,6 +87,8 @@ namespace ColorByNumber.Pages
 
         [BindProperty]
         public string OriginalImage { get; set; }
+        [BindProperty]
+        public string PdfDocument { get; set; }
 
         public byte[] Original { get; set; }
         public byte[] NormalizedBytes { get; set; }
@@ -94,7 +96,6 @@ namespace ColorByNumber.Pages
         public byte[] PBCBytes { get; set; }
         public byte[] CleanedBytes { get; set; }
         public byte[] OutlineBytes { get; set; }
-        public byte[] PdfBytes { get; set; }
 
         public List<CIELab> TopColors { get; set; } = new List<CIELab>();
 
@@ -248,8 +249,11 @@ namespace ColorByNumber.Pages
             _logger = logger;
         }
 
-        public void OnGet()
+        public IActionResult OnGet()
         {
+            
+
+            return Page();
         }
 
         public class Point
@@ -454,16 +458,13 @@ namespace ColorByNumber.Pages
                 {
                     document.Save(pdfStream);
 
-                    PdfBytes = pdfStream.ToArray();
+                    PdfDocument = Convert.ToBase64String(pdfStream.ToArray());
                 }
             }
             catch (Exception e)
             {
                 ErrorMessage = e.Message;
             }
-
-            if (PdfOnly)
-                return File(PdfBytes, "application/pdf");
 
             return Page();
         }
