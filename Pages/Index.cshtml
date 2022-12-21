@@ -107,13 +107,13 @@
         <div class="cbn-header-content">
             <input type="hidden" id="OriginalImage" name="OriginalImage" asp-for="OriginalImage" value="@Model.OriginalImage" />
             <span class="cbn-header-content-title">Step 3: &nbsp;Process</span>
-            @if (Model.FormFile != null)
-            {
-                <input asp-page-handler="Upload" id="Upload" class="cbn-button-upload" type="submit" value="Upload and Process" />
-            }
-            else if (!String.IsNullOrEmpty(Model.OriginalImage))
+            @if (!String.IsNullOrEmpty(Model.OriginalImage))
             {
                 <input asp-page-handler="Upload" id="Upload" class="cbn-button-upload" type="submit" value="Reprocess Image" />
+            }
+            else
+            {
+                <input asp-page-handler="Upload" id="Upload" class="cbn-button-upload" type="submit" value="Upload and Process" />
             }
         </div>
     </div>
