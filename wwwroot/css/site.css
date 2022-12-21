@@ -73,9 +73,7 @@ body {
 .cbn-header-container {
     display: flex;
     flex-wrap:wrap;
-    column-gap: 40px;
-    /*grid-template-columns: 300px 250px 200px;*/
-    grid-template-columns: repeat(auto-fit, minmax(250px, 300px));
+    column-gap: 30px;
     margin-bottom: 5px;
     margin-top: 0px;
     padding-left: 0px;
@@ -180,6 +178,10 @@ input[type="file"]::file-selector-button {
         background-color: #6EDE00;
     }
 
+input[type="number"] {
+    width: 50px;
+}
+
 .cbn-settings-table {
     width: 100%;
     border-spacing: 0px 5px;
@@ -189,7 +191,7 @@ input[type="file"]::file-selector-button {
 .cbn-body {
     background-color: #3889D7 !important;
     padding-left: 0px !important;
-    max-width:1100px;
+
 }
 
 .cbn-footer {
@@ -260,26 +262,6 @@ li.menu-option {
     }
 
 li a:hover:not(.active) {
-    background-color: #313540;
+    background-color: #142B52;
 }
 
-
-/* Image Magnifier
--------------------------------------------------- */
-* {
-    box-sizing: border-box;
-}
-
-.img-magnifier-container {
-    position: relative;
-}
-
-.img-magnifier-glass {
-    position: absolute;
-    border: 3px solid #000;
-    border-radius: 50%;
-    cursor: none;
-    /*Set the size of the magnifier glass:*/
-    width: 100px;
-    height: 100px;
-}
