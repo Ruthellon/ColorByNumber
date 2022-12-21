@@ -11,6 +11,11 @@
         btn.value = 'Loading Image';
         btn.style.backgroundColor = "#6EDE00";
     }
+
+    function changeSubmitButton() {
+        var btn = document.getElementById('Upload');
+        btn.value = 'Upload and Process';
+    }
     
     $(document).ready(function() {
         $("#cbnbuttoninformation").click(function(){
@@ -30,7 +35,7 @@
     <div class="cbn-header-container">
         <div class="cbn-header-content">
             <span class="cbn-header-content-title">Step 1: &nbsp;Select Image File</span>
-            <input asp-for="FormFile" type="file" accept=".jpg,.jpeg,.png,.bmp">
+            <input asp-for="FormFile" type="file" accept=".jpg,.jpeg,.png,.bmp" oninput="changeSubmitButton()" />
         </div>
         <div class="cbn-header-content">
             <span class="cbn-header-content-title">Step 2: &nbsp;Select Settings</span>
