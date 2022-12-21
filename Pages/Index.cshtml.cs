@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Org.BouncyCastle.Math.EC.Multiplier;
+using MimeKit.IO.Filters;
 using PdfSharpCore.Drawing;
 using PdfSharpCore.Pdf;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
@@ -23,13 +21,65 @@ namespace ColorByNumber.Pages
         [BindProperty]
         public bool Clean { get; set; } = true;
         [BindProperty]
+        public bool QuickNumbering { get; set; } = true;
+        [BindProperty]
         public bool Resize { get; set; } = true;
         [BindProperty]
         public bool PdfOnly { get; set; } = false;
+        private double similarityDistance = 28.0f;
         [BindProperty]
-        public double SimilarityDistance { get; set; } = 28.0f;
+        public double SimilarityDistance
+        {
+            get
+            {
+                return similarityDistance;
+            }
+            set
+            {
+                if (value > 100)
+                    similarityDistance = 100;
+                else if (value < 0)
+                    similarityDistance = 0;
+                else
+                    similarityDistance = value;
+            }
+        }
+        private int normalizeFactor = 50;
         [BindProperty]
-        public int NormalizeFactor { get; set; } = 50;
+        public int NormalizeFactor
+        {
+            get
+            {
+                return normalizeFactor;
+            }
+            set
+            {
+                if (value > 255)
+                    normalizeFactor = 255;
+                else if (value < 0)
+                    normalizeFactor = 0;
+                else
+                    normalizeFactor = value;
+            }
+        }
+        private int outlineDarkness = 64;
+        [BindProperty]
+        public int OutlineDarkness
+        { 
+            get
+            {
+                return outlineDarkness;
+            }
+            set
+            {
+                if (value > 255)
+                    outlineDarkness = 255;
+                else if (value < 0)
+                    outlineDarkness = 0;
+                else
+                    outlineDarkness = value;
+            }
+        }
         [BindProperty]
         public bool ShowDebug { get; set; } = false;
         public string ErrorMessage { get; set; } = String.Empty;
@@ -203,10 +253,29 @@ namespace ColorByNumber.Pages
             public int X { get; set; }
             public int Y { get; set; }
 
+            public Point()
+            {
+
+            }
+
             public Point(int x, int y)
             {
                 X = x;
                 Y = y;
+            }
+        }
+
+        public class RegionData : Point
+        {
+            public bool Covered { get; set; } = false;
+            public Rgba32 Color { get; set; }
+            public int RegionNumber { get; set; } = -1;
+
+            public RegionData(int x, int y, Rgba32 color)
+            {
+                X = x;
+                Y = y;
+                Color = color;
             }
         }
 
@@ -299,6 +368,11 @@ namespace ColorByNumber.Pages
                             }
 
                             var outline = GetOutlines(image);
+
+                            if (!QuickNumbering)
+                            {
+                                outline = GetRegions(image, outline);
+                            }
 
                             using (var outlineStream = new MemoryStream())
                             {
@@ -530,71 +604,174 @@ namespace ColorByNumber.Pages
                 {
                     if (image[x, y] != image[x - 1, y])
                     {
-                        outline[x, y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)128);
+                        outline[x, y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
                     }
 
                     if (image[x, y] != image[x, y - 1])
                     {
-                        outline[x, y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)128);
+                        outline[x, y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
                     }
 
-                    if (x > 3 && y > 3 && x < image.Width - 3 && y < image.Height - 3 && (x > (previousX + 10) || y > (previousY + 10)))
+                    if (QuickNumbering)
                     {
-                        Rgba32 currentColor = image[x, y];
-                        bool same = true;
-                        for (int b = Math.Max(y - 2, 0); b <= Math.Min(y + 2, image.Height - 1); b++)
+                        if (x > 3 && y > 3 && x < image.Width - 3 && y < image.Height - 3 && (x > (previousX + 10) || y > (previousY + 10)))
                         {
-                            for (int a = Math.Max(x - 2, 0); a <= Math.Min(x + 2, image.Width - 1); a++)
+                            Rgba32 currentColor = image[x, y];
+                            bool same = true;
+                            for (int b = Math.Max(y - 2, 0); b <= Math.Min(y + 2, image.Height - 1); b++)
                             {
-                                if (image[a, b] != currentColor)
+                                for (int a = Math.Max(x - 2, 0); a <= Math.Min(x + 2, image.Width - 1); a++)
                                 {
-                                    same = false;
-                                    break;
+                                    if (image[a, b] != currentColor)
+                                    {
+                                        same = false;
+                                        break;
+                                    }
                                 }
+
+                                if (!same)
+                                    break;
                             }
 
-                            if (!same)
-                                break;
+                            if (same)
+                            {
+                                previousX = x;
+                                previousY = y;
+                                for (int i = 0; i < TopColors.Count; i++)
+                                {
+                                    if (currentColor == TopColors[i].StoredColor)
+                                    {
+                                        i++;
+                                        if (i < 10)
+                                        {
+                                            foreach (var point in Numbers[i])
+                                            {
+                                                outline[point.X + x, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
+                                            }
+                                        }
+                                        else if (i >= 20)
+                                        {
+                                            foreach (var point in Numbers[2])
+                                            {
+                                                outline[point.X + x - 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
+                                            }
+
+                                            foreach (var point in Numbers[i - 20])
+                                            {
+                                                outline[point.X + x + 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
+                                            }
+                                        }
+                                        else if (i >= 10)
+                                        {
+                                            foreach (var point in Numbers[1])
+                                            {
+                                                outline[point.X + x - 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
+                                            }
+
+                                            foreach (var point in Numbers[i - 10])
+                                            {
+                                                outline[point.X + x + 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return outline;
+        }
+
+        private Image<Rgba32> GetRegions(Image<Rgba32> image, Image<Rgba32> outline)
+        {
+            List<List<RegionData>> points = new List<List<RegionData>>();
+            for (int y = 0; y < image.Height; y++)
+            {
+                List<RegionData> row = new List<RegionData>();
+                for (int x = 0; x < image.Width; x++)
+                {
+                    row.Add(new RegionData(x, y, image[x, y]));
+                }
+
+                points.Add(row);
+            }
+
+            int regionCount = 0;
+
+            for (int y = 0; y < points.Count; y++)
+            {
+                for (int x = 0; x < points[y].Count; x++)
+                {
+                    if (!points[y][x].Covered)
+                    {
+                        regionCount++;
+                        Rgba32 regionColor = points[y][x].Color;
+                        Queue<RegionData> queue = new Queue<RegionData>();
+                        List<RegionData> region = new List<RegionData>();
+                        queue.Enqueue(points[y][x]);
+                        while (queue.Count > 0)
+                        {
+                            var coord = queue.Dequeue();
+                            if (coord.Covered == false && coord.Color == regionColor)
+                            {
+                                region.Add(coord);
+                                coord.Covered = true;
+                                coord.RegionNumber = regionCount;
+                                if (coord.X > 0)
+                                    queue.Enqueue(points[coord.Y][coord.X - 1]);
+                                if (coord.X < points[y].Count - 1)
+                                    queue.Enqueue(points[coord.Y][coord.X + 1]);
+                                if (coord.Y > 0)
+                                    queue.Enqueue(points[coord.Y - 1][coord.X]);
+                                if (coord.Y < points.Count - 1)
+                                    queue.Enqueue(points[coord.Y + 1][coord.X]);
+                            }
                         }
 
-                        if (same)
+                        if (region.Count > 5)
                         {
-                            previousX = x;
-                            previousY = y;
+                            Point labelLocation = GetLabelLocation(points, region);
+
+                            if (labelLocation == null || labelLocation.Y < 3 || labelLocation.Y >= points.Count - 4 || labelLocation.X < 3 || labelLocation.X >= points[y].Count - 4)
+                                continue;
+
                             for (int i = 0; i < TopColors.Count; i++)
                             {
-                                if (currentColor == TopColors[i].StoredColor)
+                                if (region[0].Color == TopColors[i].StoredColor)
                                 {
                                     i++;
                                     if (i < 10)
                                     {
                                         foreach (var point in Numbers[i])
                                         {
-                                            outline[point.X + x, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                            outline[point.X + labelLocation.X, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
                                         }
                                     }
                                     else if (i >= 20)
                                     {
                                         foreach (var point in Numbers[2])
                                         {
-                                            outline[point.X + x - 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                            outline[point.X + labelLocation.X - 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
                                         }
 
                                         foreach (var point in Numbers[i - 20])
                                         {
-                                            outline[point.X + x + 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                            outline[point.X + labelLocation.X + 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
                                         }
                                     }
                                     else if (i >= 10)
                                     {
                                         foreach (var point in Numbers[1])
                                         {
-                                            outline[point.X + x - 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                            outline[point.X + labelLocation.X - 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
                                         }
 
                                         foreach (var point in Numbers[i - 10])
                                         {
-                                            outline[point.X + x + 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)64);
+                                            outline[point.X + labelLocation.X + 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
                                         }
                                     }
                                     break;
@@ -606,6 +783,42 @@ namespace ColorByNumber.Pages
             }
 
             return outline;
+        }
+
+        private Point GetLabelLocation(List<List<RegionData>> points, List<RegionData> region)
+        {
+            Point bestPoint = null;
+            int best = 0;
+            foreach (var point in region)
+            {
+                int goodness = SameCount(point, points, -1, 0) *
+                    SameCount(point, points, 1, 0) *
+                    SameCount(point, points, 0, -1) *
+                    SameCount(point, points, 0, 1);
+
+                if (goodness > best)
+                {
+                    best = goodness;
+                    bestPoint = new Point(point.X, point.Y);
+                }
+            }
+            return bestPoint;
+        }
+
+        private int SameCount (RegionData regionPoint, List<List<RegionData>> points, int incX, int incY)
+        {
+            int count = -1;
+            int x = regionPoint.X;
+            int y = regionPoint.Y;
+
+            while (y >= 0 && y < points.Count && x >= 0 && x < points[y].Count && regionPoint.RegionNumber == points[y][x].RegionNumber)
+            {
+                count++;
+                x += incX;
+                y += incY;
+            }
+
+            return count;
         }
 
         private Rgba32 NormalizeColor(Rgba32 pixel, double factor)

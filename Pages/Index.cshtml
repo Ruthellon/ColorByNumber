@@ -99,7 +99,7 @@
                         <input type="checkbox" name="Normalize" id="Normalize" asp-for="Normalize" value="true" checked="@Model.Normalize" />
                     </td>
                     <td>
-                        <input type="text" size="5" name="NormalizeFactor" id="NormalizeFactor" asp-for="NormalizeFactor" value="@Model.NormalizeFactor" />
+                        <input type="number" size="5" name="NormalizeFactor" id="NormalizeFactor" asp-for="NormalizeFactor" value="@Model.NormalizeFactor" />
                     </td>
                 </tr>
                 <tr>
@@ -114,7 +114,7 @@
                 </tr>
                 <tr>
                     <td>Sim Distance:</td>
-                    <td><input type="text" size="5" name="SimilarityDistance" id="SimilarityDistance" asp-for="SimilarityDistance" value="@Model.SimilarityDistance" /></td>
+                    <td><input type="number" size="5" name="SimilarityDistance" id="SimilarityDistance" asp-for="SimilarityDistance" value="@Model.SimilarityDistance" /></td>
                 </tr>
                 @*<tr>
                     <td>Email Results:</td>
@@ -122,6 +122,18 @@
                         <input type="email" size="5" name="EmailAddress" id="EmailAddress" asp-for="EmailAddress" value="@Model.EmailAddress" />
                     </td>
                 </tr>*@
+                <tr>
+                    <td>Quick Numbering:</td>
+                    <td>
+                        <input type="checkbox" name="QuickNumbering" id="QuickNumbering" asp-for="QuickNumbering" value="true" checked="@Model.QuickNumbering" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>Outline Darkness:</td>
+                    <td>
+                        <input type="number" size="5" name="OutlineDarkness" id="OutlineDarkness" asp-for="OutlineDarkness" checked="@Model.OutlineDarkness" />
+                    </td>
+                </tr>
                 <tr>
                     <td>Resize First:</td>
                     <td>
@@ -142,7 +154,7 @@
                 {
                     <tr>
                         <td>Error Message:</td>
-                        <td><input type="checkbox" name="ShowDebug" id="ShowDebug" asp-for="ShowDebug" value="true" checked="@Model.ShowDebug" /></td>
+                        <td>Please let me know you got this, and what it was: @Model.ErrorMessage</td>
                     </tr>
                 }
             </table>    
@@ -162,7 +174,7 @@
     </p>
     <p>
         <b>Normalize -</b> This will round each RGB value to the nearest <i>N</i> value specified (eg 57, 123, 245 rounded to nearest 50 will result in 50, 100, 250).<br />
-                    This slightly alters each color present, but allows the algorithm to have a smaller selection of colors to choose from. Default is off.
+                    This slightly alters each color present, but allows the algorithm to have a smaller selection of colors to choose from. Range is 0 - 255. Default is 50 and off.
     </p>
     <p>
         <b>Soften -</b> This will go through pixel by pixel and round each pixel to the average of its neighbors.<br />
@@ -174,7 +186,15 @@
     </p>
     <p>
         <b>Sim Distance -</b> AKA Similarity Distance is the value used to determine whether two colors are similar. The lower the number the more similar colors must be as determined by their CIELAB color.<br />
-                   Lower this number if you want more colors, raise it if you want want fewer. Default is 28.0.
+                   Lower this number if you want more colors, raise it if you want want fewer. Range is 0 - 100. Default is 28.0.
+    </p>
+    <p>
+        <b>Quick Numbering -</b> When ON it will do a quicker numbering algorithm, putting numbers everywhere. When off it does a longer algorithm that finds each region and places a single number there.<br />
+                   Default is on.
+    </p>
+    <p>
+        <b>Outline Darkness -</b> Lower this number for lighter lines, raise for darker lines and numbers. Range is 0 - 255. <br />
+                    Default is 64.
     </p>
     <p>
         <b>Resize First -</b> This will resize the image to it's final size before calculations (Final size is scaled to fit a 720px x 960px pdf document).<br />
