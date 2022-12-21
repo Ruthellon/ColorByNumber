@@ -86,7 +86,7 @@ body {
     padding: 10px;
     border-radius: 10px;
     margin: 20px 0px;
-    min-width: 300px;
+    min-width: 350px;
 }
 
 .cbn-header-content-title {
@@ -112,7 +112,7 @@ body {
         padding: 10px;
         border-radius: 10px;
         margin: 10px 0px;
-        min-width: 300px;
+        width: 300px;
     }
     .cbn-image-max {
         max-width: 200px;
