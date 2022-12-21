@@ -6,6 +6,7 @@ using PdfSharpCore.Pdf;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using System.IO;
 
 namespace ColorByNumber.Pages
 {
@@ -83,6 +84,9 @@ namespace ColorByNumber.Pages
         [BindProperty]
         public bool ShowDebug { get; set; } = false;
         public string ErrorMessage { get; set; } = String.Empty;
+
+        [BindProperty]
+        public string OriginalImage { get; set; }
 
         public byte[] Original { get; set; }
         public byte[] NormalizedBytes { get; set; }
@@ -283,165 +287,174 @@ namespace ColorByNumber.Pages
         {
             try
             {
-                if (FormFile != null && FormFile.Length > 0)
+                Image<Rgba32> image;
+                if (FormFile == null || FormFile.Length == 0)
                 {
-                    var filePath = Path.GetFullPath(FormFile.FileName);
+                    if (String.IsNullOrEmpty(OriginalImage))
+                        return Page();
 
+                    Original = Convert.FromBase64String(OriginalImage);
+
+                    image = Image<Rgba32>.Load<Rgba32>(Original);
+                }
+                else
+                {
                     using (var memoryStream = new MemoryStream())
                     {
                         await FormFile.CopyToAsync(memoryStream);
-
                         Original = memoryStream.ToArray();
-                        bool resizeToPdf = true;
+                        OriginalImage = Convert.ToBase64String(Original);
 
                         using (var img = Image<Rgba32>.Load<Rgba32>(memoryStream.ToArray()))
                         {
-                            Image<Rgba32> image = img;
-
-                            if (Resize && (image.Height > 720 || image.Width > 720))
-                            {
-                                double multiplier = .5f;
-                                if (image.Height > image.Width)
-                                {
-                                    multiplier = (720.0f / (double)image.Height);
-                                }
-                                else
-                                {
-                                    multiplier = (720.0f / (double)image.Width);
-                                }
-                                resizeToPdf = false;
-                                image.Mutate(x => x.Resize(Convert.ToInt32(image.Width * multiplier), Convert.ToInt32(image.Height * multiplier)));
-                            }
-
-                            if (Normalize)
-                            {
-                                image = NormalizeImage(image, NormalizeFactor);
-
-                                if (ShowDebug)
-                                {
-                                    using (var normalStream = new MemoryStream())
-                                    {
-                                        image.SaveAsPng(normalStream);
-
-                                        NormalizedBytes = normalStream.ToArray();
-                                    }
-                                }
-                            }
-
-                            if (Soften)
-                            {
-                                image = SoftenImage(image);
-
-                                if (ShowDebug)
-                                {
-                                    using (var softenedStream = new MemoryStream())
-                                    {
-                                        image.SaveAsPng(softenedStream);
-
-                                        SoftenedBytes = softenedStream.ToArray();
-                                    }
-                                }
-                            }
-
-                            image = ProcessImage(image);
-
-                            if (!Clean || ShowDebug)
-                            {
-                                using (var processedStream = new MemoryStream())
-                                {
-                                    image.SaveAsPng(processedStream);
-
-                                    PBCBytes = processedStream.ToArray();
-                                }
-                            }
-
-                            if (Clean)
-                            {
-                                image = CleanImage(image);
-
-                                using (var cleanedStream = new MemoryStream())
-                                {
-                                    image.SaveAsPng(cleanedStream);
-
-                                    CleanedBytes = cleanedStream.ToArray();
-                                }
-                            }
-
-                            var outline = GetOutlines(image);
-
-                            if (!QuickNumbering)
-                            {
-                                outline = GetRegions(image, outline);
-                            }
-
-                            using (var outlineStream = new MemoryStream())
-                            {
-                                outline.Mutate(x => x.BackgroundColor(Color.White));
-                                outline.SaveAsPng(outlineStream);
-
-                                OutlineBytes = outlineStream.ToArray();
-                            }
-
-                            if (resizeToPdf)
-                            {
-                                if (outline.Height > outline.Width)
-                                {
-                                    double multiplier = (720.0f / (double)outline.Height);
-                                    outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
-                                    image.Mutate(x => x.Resize(Convert.ToInt32(image.Width * multiplier), Convert.ToInt32(image.Height * multiplier)));
-
-                                }
-                                else
-                                {
-                                    double multiplier = (720.0f / (double)outline.Width);
-                                    outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
-                                    outline.Mutate(y => y.Rotate(90.0f));
-                                    image.Mutate(x => x.Resize(Convert.ToInt32(image.Width * multiplier), Convert.ToInt32(image.Height * multiplier)));
-                                    image.Mutate(y => y.Rotate(90.0f));
-                                }
-                            }
-
-                            byte[] resizedOutline = null;
-                            byte[] resizedPBN = null;
-                            using (var resizeStream = new MemoryStream())
-                            {
-                                outline.SaveAsPng(resizeStream);
-                                resizedOutline = resizeStream.ToArray();
-                            }
-
-                            using (var resizeStream = new MemoryStream())
-                            {
-                                image.SaveAsPng(resizeStream);
-                                resizedPBN = resizeStream.ToArray();
-                            }
-
-                            PdfDocument document = new PdfDocument();
-                            PdfPage pageColors = document.AddPage();
-                            XGraphics gfxColors = XGraphics.FromPdfPage(pageColors);
-                            for (int i = 0; i < TopColors.Count; i++)
-                            {
-                                gfxColors.DrawRectangle(new XSolidBrush(XColor.FromArgb(255, TopColors[i].StoredColor.R, TopColors[i].StoredColor.G, TopColors[i].StoredColor.B)), new XRect(65, 45 + (i * 20), 150, 10));
-                                gfxColors.DrawString((i + 1).ToString(), new XFont("Verdana", 12), new XSolidBrush(XColor.FromArgb(255, 0, 0, 0)), 45, 55 + (20 * i));
-                            }
-
-                            PdfPage page = document.AddPage();
-                            XGraphics gfx = XGraphics.FromPdfPage(page);
-                            XImage xImage = XImage.FromStream(() => new MemoryStream(resizedOutline));
-                            gfx.DrawImage(xImage, 45, 45);
-
-                            PdfPage imagePage = document.AddPage();
-                            XGraphics imagegfx = XGraphics.FromPdfPage(imagePage);
-                            XImage imagexImage = XImage.FromStream(() => new MemoryStream(resizedPBN));
-                            imagegfx.DrawImage(imagexImage, 45, 45);
-
-                            using (var pdfStream = new MemoryStream())
-                            {
-                                document.Save(pdfStream);
-
-                                PdfBytes = pdfStream.ToArray();
-                            }
+                            image = img.Clone();
                         }
                     }
+                }
+
+                bool resizeToPdf = true;
+
+                if (Resize && (image.Height > 720 || image.Width > 720))
+                {
+                    double multiplier = .5f;
+                    if (image.Height > image.Width)
+                    {
+                        multiplier = (720.0f / (double)image.Height);
+                    }
+                    else
+                    {
+                        multiplier = (720.0f / (double)image.Width);
+                    }
+                    resizeToPdf = false;
+                    image.Mutate(x => x.Resize(Convert.ToInt32(image.Width * multiplier), Convert.ToInt32(image.Height * multiplier)));
+                }
+
+                if (Normalize)
+                {
+                    image = NormalizeImage(image, NormalizeFactor);
+
+                    if (ShowDebug)
+                    {
+                        using (var normalStream = new MemoryStream())
+                        {
+                            image.SaveAsPng(normalStream);
+
+                            NormalizedBytes = normalStream.ToArray();
+                        }
+                    }
+                }
+
+                if (Soften)
+                {
+                    image = SoftenImage(image);
+
+                    if (ShowDebug)
+                    {
+                        using (var softenedStream = new MemoryStream())
+                        {
+                            image.SaveAsPng(softenedStream);
+
+                            SoftenedBytes = softenedStream.ToArray();
+                        }
+                    }
+                }
+
+                image = ProcessImage(image);
+
+                if (!Clean || ShowDebug)
+                {
+                    using (var processedStream = new MemoryStream())
+                    {
+                        image.SaveAsPng(processedStream);
+
+                        PBCBytes = processedStream.ToArray();
+                    }
+                }
+
+                if (Clean)
+                {
+                    image = CleanImage(image);
+
+                    using (var cleanedStream = new MemoryStream())
+                    {
+                        image.SaveAsPng(cleanedStream);
+
+                        CleanedBytes = cleanedStream.ToArray();
+                    }
+                }
+
+                var outline = GetOutlines(image);
+
+                if (!QuickNumbering)
+                {
+                    outline = GetRegions(image, outline);
+                }
+
+                using (var outlineStream = new MemoryStream())
+                {
+                    outline.Mutate(x => x.BackgroundColor(Color.White));
+                    outline.SaveAsPng(outlineStream);
+
+                    OutlineBytes = outlineStream.ToArray();
+                }
+
+                if (resizeToPdf)
+                {
+                    if (outline.Height > outline.Width)
+                    {
+                        double multiplier = (720.0f / (double)outline.Height);
+                        outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
+                        image.Mutate(x => x.Resize(Convert.ToInt32(image.Width * multiplier), Convert.ToInt32(image.Height * multiplier)));
+
+                    }
+                    else
+                    {
+                        double multiplier = (720.0f / (double)outline.Width);
+                        outline.Mutate(x => x.Resize(Convert.ToInt32(outline.Width * multiplier), Convert.ToInt32(outline.Height * multiplier)));
+                        outline.Mutate(y => y.Rotate(90.0f));
+                        image.Mutate(x => x.Resize(Convert.ToInt32(image.Width * multiplier), Convert.ToInt32(image.Height * multiplier)));
+                        image.Mutate(y => y.Rotate(90.0f));
+                    }
+                }
+
+                byte[] resizedOutline = null;
+                byte[] resizedPBN = null;
+                using (var resizeStream = new MemoryStream())
+                {
+                    outline.SaveAsPng(resizeStream);
+                    resizedOutline = resizeStream.ToArray();
+                }
+
+                using (var resizeStream = new MemoryStream())
+                {
+                    image.SaveAsPng(resizeStream);
+                    resizedPBN = resizeStream.ToArray();
+                }
+
+                PdfDocument document = new PdfDocument();
+                PdfPage pageColors = document.AddPage();
+                XGraphics gfxColors = XGraphics.FromPdfPage(pageColors);
+                for (int i = 0; i < TopColors.Count; i++)
+                {
+                    gfxColors.DrawRectangle(new XSolidBrush(XColor.FromArgb(255, TopColors[i].StoredColor.R, TopColors[i].StoredColor.G, TopColors[i].StoredColor.B)), new XRect(65, 45 + (i * 20), 150, 10));
+                    gfxColors.DrawString((i + 1).ToString(), new XFont("Verdana", 12), new XSolidBrush(XColor.FromArgb(255, 0, 0, 0)), 45, 55 + (20 * i));
+                }
+
+                PdfPage page = document.AddPage();
+                XGraphics gfx = XGraphics.FromPdfPage(page);
+                XImage xImage = XImage.FromStream(() => new MemoryStream(resizedOutline));
+                gfx.DrawImage(xImage, 45, 45);
+
+                PdfPage imagePage = document.AddPage();
+                XGraphics imagegfx = XGraphics.FromPdfPage(imagePage);
+                XImage imagexImage = XImage.FromStream(() => new MemoryStream(resizedPBN));
+                imagegfx.DrawImage(imagexImage, 45, 45);
+
+                using (var pdfStream = new MemoryStream())
+                {
+                    document.Save(pdfStream);
+
+                    PdfBytes = pdfStream.ToArray();
                 }
             }
             catch (Exception e)

@@ -30,7 +30,7 @@
     <div class="cbn-header-container">
         <div class="cbn-header-content">
             <span class="cbn-header-content-title">Step 1: &nbsp;Select Image File</span>
-            <input id="FormFile" name="FormFile" asp-for="FormFile" value="@Model.FormFile" type="file" accept=".jpg,.jpeg,.png,.bmp">
+            <input asp-for="FormFile" type="file" accept=".jpg,.jpeg,.png,.bmp">
         </div>
         <div class="cbn-header-content">
             <span class="cbn-header-content-title">Step 2: &nbsp;Select Settings</span>
@@ -105,8 +105,9 @@
             </table>    
         </div>
         <div class="cbn-header-content">
-                <span class="cbn-header-content-title">Step 3: &nbsp;Upload</span>
-                <input asp-page-handler="Upload" id="Upload" class="cbn-button-upload" type="submit" value="Upload" />
+            <input type="hidden" id="OriginalImage" name="OriginalImage" asp-for="OriginalImage" value="@Model.OriginalImage" />
+            <span class="cbn-header-content-title">Step 3: &nbsp;Upload</span>
+            <input asp-page-handler="Upload" id="Upload" class="cbn-button-upload" type="submit" value="Upload" />
         </div>
     </div>
 </form>
