@@ -168,12 +168,10 @@
                         <img src="~/img/pdf-dnload.png" alt="" width="40px;" />
                         Download PDF
                     </a>
-                </td>
-                <td>
-                    If Mobile:
                     <form method="post">
+                        <img src="~/img/pdf-dnload.png" alt="" width="40px;" class="cbn-mobilepdf-image"/>
                         <input type="hidden" name="PdfDocument" id="PdfDocument" asp-for="PdfDocument" value="@Model.PdfDocument"/>
-                        <input asp-page-handler="Download" type="submit" value="Download PDF" />
+                        <input asp-page-handler="Download" type="submit" value="Download PDF" class="cbn-mobilepdf-button" />
                     </form>
                 </td>
             </tr>
