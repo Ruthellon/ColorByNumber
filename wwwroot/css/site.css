@@ -97,7 +97,7 @@ body {
     margin-bottom: 10px;
 }
 
-@media (min-width: 420px) and (max-width: 580px) {
+@media (min-width: 0px) and (max-width: 750px) {
     .cbn-header-container {
         display: flex;
         flex-wrap: wrap;

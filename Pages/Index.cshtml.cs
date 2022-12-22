@@ -6,7 +6,6 @@ using PdfSharpCore.Pdf;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using System.IO;
 
 namespace ColorByNumber.Pages
 {
@@ -81,6 +80,8 @@ namespace ColorByNumber.Pages
                     outlineDarkness = value;
             }
         }
+        [BindProperty]
+        public int ColorCount { get; set; } = 25;
         [BindProperty]
         public bool ShowDebug { get; set; } = false;
         public string ErrorMessage { get; set; } = String.Empty;
@@ -310,16 +311,24 @@ namespace ColorByNumber.Pages
                     using (var memoryStream = new MemoryStream())
                     {
                         await FormFile.CopyToAsync(memoryStream);
-                        Original = memoryStream.ToArray();
-                        OriginalImage = Convert.ToBase64String(Original);
 
                         using (var img = Image<Rgba32>.Load<Rgba32>(memoryStream.ToArray()))
                         {
+                            img.Mutate(x => x.AutoOrient());
                             image = img.Clone();
+                        }
+
+                        using (var originalStream = new MemoryStream())
+                        {
+                            image.SaveAsPng(originalStream);
+
+                            Original = originalStream.ToArray();
+                            OriginalImage = Convert.ToBase64String(Original);
                         }
                     }
 
-                    FileName = "pbn_" + FormFile.FileName;
+                    int indexOf = FormFile.FileName.LastIndexOf('.');
+                    FileName = "pbn_" + FormFile.FileName.Remove(indexOf, FormFile.FileName.Length-indexOf)  + ".pdf";
                 }
 
                 bool resizeToPdf = true;
@@ -341,7 +350,7 @@ namespace ColorByNumber.Pages
 
                 if (Normalize)
                 {
-                    image = NormalizeImage(image, NormalizeFactor);
+                    image = await Task.Factory.StartNew(() => NormalizeImage(image, NormalizeFactor));
 
                     if (ShowDebug)
                     {
@@ -356,7 +365,7 @@ namespace ColorByNumber.Pages
 
                 if (Soften)
                 {
-                    image = SoftenImage(image);
+                    image = await Task.Factory.StartNew(() => SoftenImage(image));
 
                     if (ShowDebug)
                     {
@@ -369,7 +378,7 @@ namespace ColorByNumber.Pages
                     }
                 }
 
-                image = ProcessImage(image);
+                image = await Task.Factory.StartNew(() => ProcessImage(image));
 
                 if (!Clean || ShowDebug)
                 {
@@ -383,7 +392,7 @@ namespace ColorByNumber.Pages
 
                 if (Clean)
                 {
-                    image = CleanImage(image);
+                    image = await Task.Factory.StartNew(() => CleanImage(image));
 
                     using (var cleanedStream = new MemoryStream())
                     {
@@ -393,11 +402,11 @@ namespace ColorByNumber.Pages
                     }
                 }
 
-                var outline = GetOutlines(image);
+                var outline = await Task.Factory.StartNew(() => GetOutlines(image));
 
                 if (!QuickNumbering)
                 {
-                    outline = GetRegions(image, outline);
+                    outline = await Task.Factory.StartNew(() => GetRegions(image, outline));
                 }
 
                 using (var outlineStream = new MemoryStream())
@@ -446,8 +455,9 @@ namespace ColorByNumber.Pages
                 XGraphics gfxColors = XGraphics.FromPdfPage(pageColors);
                 for (int i = 0; i < TopColors.Count; i++)
                 {
-                    gfxColors.DrawRectangle(new XSolidBrush(XColor.FromArgb(255, TopColors[i].StoredColor.R, TopColors[i].StoredColor.G, TopColors[i].StoredColor.B)), new XRect(65, 45 + (i * 20), 150, 10));
-                    gfxColors.DrawString((i + 1).ToString(), new XFont("Verdana", 12), new XSolidBrush(XColor.FromArgb(255, 0, 0, 0)), 45, 55 + (20 * i));
+                    int x = 45 + (250 * (i / 35));
+                    gfxColors.DrawRectangle(new XSolidBrush(XColor.FromArgb(255, TopColors[i].StoredColor.R, TopColors[i].StoredColor.G, TopColors[i].StoredColor.B)), new XRect(x + 20, 45 + ((i % 35) * 20), 150, 10));
+                    gfxColors.DrawString((i + 1).ToString(), new XFont("Verdana", 12), new XSolidBrush(XColor.FromArgb(255, 0, 0, 0)), x, 55 + (20 * (i % 35)));
                 }
 
                 PdfPage page = document.AddPage();
@@ -477,8 +487,8 @@ namespace ColorByNumber.Pages
 
         private Image<Rgba32> SoftenImage(Image<Rgba32> image)
         {
-            Image<Rgba32> softened = image;
-            for (int y = 0; y < image.Height; y++)
+            Image<Rgba32> softened = new Image<Rgba32>(image.Width, image.Height);
+            Parallel.For(0, image.Height, y =>
             {
                 for (int x = 0; x < image.Width; x++)
                 {
@@ -499,28 +509,28 @@ namespace ColorByNumber.Pages
 
                     softened[x, y] = new Rgba32((byte)red, (byte)green, (byte)blue);
                 }
-            }
+            });
             return softened;
         }
 
         private Image<Rgba32> NormalizeImage(Image<Rgba32> image, int factor)
         {
-            Image<Rgba32> normalized = image;
-            for (int y = 0; y < image.Height; y++)
+            Image<Rgba32> normalized = new Image<Rgba32>(image.Width, image.Height);
+            Parallel.For(0, image.Height, y =>
             {
                 for (int x = 0; x < image.Width; x++)
                 {
                     normalized[x, y] = NormalizeColor(image[x, y], factor);
                 }
-            }
+            });
 
             return normalized;
         }
 
         private Image<Rgba32> CleanImage(Image<Rgba32> image)
         {
-            Image<Rgba32> cleaned = image;
-            for (int y = 0; y < image.Height; y++)
+            Image<Rgba32> cleaned = new Image<Rgba32>(image.Width, image.Height);
+            Parallel.For(0, image.Height, y =>
             {
                 for (int x = 0; x < image.Width; x++)
                 {
@@ -541,15 +551,19 @@ namespace ColorByNumber.Pages
                     {
                         cleaned[x, y] = colors.OrderByDescending(z => z.Value).FirstOrDefault().Key;
                     }
+                    else
+                    {
+                        cleaned[x, y] = image[x,y];
+                    }
                 }
-            }
+            });
 
             return cleaned;
         }
 
         private Image<Rgba32> ProcessImage(Image<Rgba32> image)
         {
-            Image<Rgba32> processedImage = image;
+            Image<Rgba32> processedImage = new Image<Rgba32>(image.Width, image.Height);
             Dictionary<Rgba32, int> colorCount = new Dictionary<Rgba32, int>();
             for (int y = 0; y < image.Height; y++)
             {
@@ -584,10 +598,10 @@ namespace ColorByNumber.Pages
                     TopColors.Add(labColor);
             }
 
-            if (TopColors.Count > 25)
-                TopColors.RemoveRange(25, TopColors.Count - 25);
+            if (TopColors.Count > ColorCount)
+                TopColors.RemoveRange(ColorCount, TopColors.Count - ColorCount);
 
-            for (int y = 0; y < image.Height; y++)
+            Parallel.For(0, image.Height, y =>
             {
                 for (int x = 0; x < image.Width; x++)
                 {
@@ -607,7 +621,7 @@ namespace ColorByNumber.Pages
 
                     processedImage[x, y] = TopColors[index].StoredColor;
                 }
-            }
+            });
 
             return processedImage;
         }
@@ -664,34 +678,23 @@ namespace ColorByNumber.Pages
                                         i++;
                                         if (i < 10)
                                         {
-                                            foreach (var point in Numbers[i])
+                                            Parallel.ForEach(Numbers[i], point =>
                                             {
                                                 outline[point.X + x, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
-                                            }
+                                            });
                                         }
-                                        else if (i >= 20)
+                                        else
                                         {
-                                            foreach (var point in Numbers[2])
+                                            int tens = i / 10;
+                                            Parallel.ForEach(Numbers[tens], point =>
                                             {
                                                 outline[point.X + x - 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
-                                            }
+                                            });
 
-                                            foreach (var point in Numbers[i - 20])
+                                            Parallel.ForEach(Numbers[i - (tens * 10)], point =>
                                             {
                                                 outline[point.X + x + 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
-                                            }
-                                        }
-                                        else if (i >= 10)
-                                        {
-                                            foreach (var point in Numbers[1])
-                                            {
-                                                outline[point.X + x - 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
-                                            }
-
-                                            foreach (var point in Numbers[i - 10])
-                                            {
-                                                outline[point.X + x + 1, point.Y + y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
-                                            }
+                                            });
                                         }
                                         break;
                                     }
@@ -765,35 +768,60 @@ namespace ColorByNumber.Pages
                                     i++;
                                     if (i < 10)
                                     {
-                                        foreach (var point in Numbers[i])
+                                        Parallel.ForEach(Numbers[i], point =>
                                         {
                                             outline[point.X + labelLocation.X, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
-                                        }
+                                        });
                                     }
-                                    else if (i >= 20)
+                                    else
                                     {
-                                        foreach (var point in Numbers[2])
+                                        int tens = i / 10;
+                                        Parallel.ForEach(Numbers[tens], point =>
                                         {
                                             outline[point.X + labelLocation.X - 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
-                                        }
+                                        });
 
-                                        foreach (var point in Numbers[i - 20])
+                                        Parallel.ForEach(Numbers[i - (tens * 10)], point =>
                                         {
                                             outline[point.X + labelLocation.X + 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
-                                        }
+                                        });
                                     }
-                                    else if (i >= 10)
-                                    {
-                                        foreach (var point in Numbers[1])
-                                        {
-                                            outline[point.X + labelLocation.X - 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
-                                        }
+                                    //else if (i >= 30)
+                                    //{
+                                    //    Parallel.ForEach(Numbers[3], point =>
+                                    //    {
+                                    //        outline[point.X + labelLocation.X - 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
+                                    //    });
 
-                                        foreach (var point in Numbers[i - 10])
-                                        {
-                                            outline[point.X + labelLocation.X + 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
-                                        }
-                                    }
+                                    //    Parallel.ForEach(Numbers[i - 30], point =>
+                                    //    {
+                                    //        outline[point.X + labelLocation.X + 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
+                                    //    });
+                                    //}
+                                    //else if (i >= 20)
+                                    //{
+                                    //    Parallel.ForEach(Numbers[2], point =>
+                                    //    {
+                                    //        outline[point.X + labelLocation.X - 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
+                                    //    });
+
+                                    //    Parallel.ForEach(Numbers[i - 20], point =>
+                                    //    {
+                                    //        outline[point.X + labelLocation.X + 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
+                                    //    });
+                                    //}
+                                    //else if (i >= 10)
+                                    //{
+                                    //    Parallel.ForEach(Numbers[1], point =>
+                                    //    {
+                                    //        outline[point.X + labelLocation.X - 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
+                                    //    });
+
+                                    //    Parallel.ForEach(Numbers[i - 10], point =>
+                                    //    {
+                                    //        outline[point.X + labelLocation.X + 1, point.Y + labelLocation.Y] = new Rgba32((byte)0, (byte)0, (byte)0, (byte)OutlineDarkness);
+                                    //    });
+                                    //}
                                     break;
                                 }
                             }
