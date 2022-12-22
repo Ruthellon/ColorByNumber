@@ -76,12 +76,12 @@
                         <input type="email" size="5" name="EmailAddress" id="EmailAddress" asp-for="EmailAddress" value="@Model.EmailAddress" />
                     </td>
                 </tr>*@
-                <tr>
+                @*<tr>
                     <td>Quick Numbering:</td>
                     <td>
                         <input type="checkbox" name="QuickNumbering" id="QuickNumbering" asp-for="QuickNumbering" value="true" checked="@Model.QuickNumbering" />
                     </td>
-                </tr>
+                </tr>*@
                 <tr>
                     <td>Outline Darkness:</td>
                     <td>
@@ -146,9 +146,13 @@
                    Lower this number if you want more colors, raise it if you want want fewer. Range is 0 - 100. Default is 28.0.
     </p>
     <p>
+        <b>Color Count -</b> The maximum number of colors that you'd like to paint with.<br />
+                Default is 25.
+    </p>
+    @*<p>
         <b>Quick Numbering -</b> When ON it will do a quicker numbering algorithm, putting numbers everywhere. When off it does a longer algorithm that finds each region and places a single number there.<br />
                    Default is on.
-    </p>
+    </p>*@
     <p>
         <b>Outline Darkness -</b> Lower this number for lighter lines, raise for darker lines and numbers. Range is 0 - 255. <br />
                     Default is 64.
