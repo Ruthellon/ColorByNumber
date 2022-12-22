@@ -105,6 +105,7 @@
         </div>
         <div class="cbn-header-content">
             <input type="hidden" id="OriginalImage" name="OriginalImage" asp-for="OriginalImage" value="@Model.OriginalImage" />
+            <input type="hidden" id="FileName" name="FileName" asp-for="FileName" value="@Model.FileName" />
             <span class="cbn-header-content-title">Step 3: &nbsp;Process</span>
             @if (!String.IsNullOrEmpty(Model.OriginalImage))
             {
@@ -163,10 +164,17 @@
         <table class="cbn-results-table">
             <tr>
                 <td>
-                    <a href="@String.Format("data:application/pdf;base64,{0}", Model.PdfDocument)" download class="cbn-pdf-lnk" >
+                    <a href="@String.Format("data:application/pdf;base64,{0}", Model.PdfDocument)" download="@Model.FileName" class="cbn-pdf-lnk">
                         <img src="~/img/pdf-dnload.png" alt="" width="40px;" />
                         Download PDF
                     </a>
+                </td>
+                <td>
+                    If Mobile:
+                    <form method="post">
+                        <input type="hidden" name="PdfDocument" id="PdfDocument" asp-for="PdfDocument" value="@Model.PdfDocument"/>
+                        <input asp-page-handler="Download" type="submit" value="Download PDF" />
+                    </form>
                 </td>
             </tr>
             @if (Model.ShowDebug)

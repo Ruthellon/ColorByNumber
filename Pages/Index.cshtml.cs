@@ -89,6 +89,8 @@ namespace ColorByNumber.Pages
         public string OriginalImage { get; set; }
         [BindProperty]
         public string PdfDocument { get; set; }
+        [BindProperty]
+        public string FileName { get; set; }
 
         public byte[] Original { get; set; }
         public byte[] NormalizedBytes { get; set; }
@@ -249,11 +251,13 @@ namespace ColorByNumber.Pages
             _logger = logger;
         }
 
-        public IActionResult OnGet()
+        public void OnGet()
         {
-            
+        }
 
-            return Page();
+        public FileResult OnPostDownload()
+        {
+            return File(Convert.FromBase64String(PdfDocument), "application/pdf");
         }
 
         public class Point
@@ -314,6 +318,8 @@ namespace ColorByNumber.Pages
                             image = img.Clone();
                         }
                     }
+
+                    FileName = "pbn_" + FormFile.FileName;
                 }
 
                 bool resizeToPdf = true;
