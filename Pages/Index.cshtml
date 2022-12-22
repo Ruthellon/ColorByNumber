@@ -163,7 +163,8 @@
         <table class="cbn-results-table">
             <tr>
                 <td>
-                    <a href="@String.Format("data:application/pdf;base64,{0}", Model.PdfDocument)" download>
+                    <a href="@String.Format("data:application/pdf;base64,{0}", Model.PdfDocument)" download class="cbn-pdf-lnk" >
+                        <img src="~/img/pdf-dnload.png" alt="" width="40px;" />
                         Download PDF
                     </a>
                 </td>
