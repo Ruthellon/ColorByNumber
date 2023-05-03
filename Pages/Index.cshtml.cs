@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MimeKit.IO.Filters;
+using PdfSharpCore;
 using PdfSharpCore.Drawing;
 using PdfSharpCore.Pdf;
 using SixLabors.ImageSharp;
@@ -26,8 +27,10 @@ namespace ColorByNumber.Pages
         [BindProperty]
         public bool Resize { get; set; } = true;
         [BindProperty]
+        public bool KeepAspect { get; set; } = false;
+        [BindProperty]
         public bool PdfOnly { get; set; } = false;
-        private double similarityDistance = 24.0f;
+        private double similarityDistance = 20.0f;
         [BindProperty]
         public double SimilarityDistance
         {
@@ -82,7 +85,7 @@ namespace ColorByNumber.Pages
             }
         }
         [BindProperty]
-        public int ColorCount { get; set; } = 25;
+        public int ColorCount { get; set; } = 35;
         [BindProperty]
         public bool ShowDebug { get; set; } = false;
         public string ErrorMessage { get; set; } = String.Empty;
@@ -328,29 +331,42 @@ namespace ColorByNumber.Pages
                     FileName = "pbn_" + FormFile.FileName.Remove(indexOf, FormFile.FileName.Length-indexOf)  + ".pdf";
                 }
 
-                bool resizeToPdf = true;
-
-                if (Resize && (image.Height > 720 || image.Width > 720))
+                if (Resize)
                 {
-                    double multiplier = .5f;
-                    if (image.Height > image.Width)
+                    if (image.Height >= image.Width)
                     {
-                        multiplier = (720.0f / (double)image.Height);
+                        if (!KeepAspect)
+                        {
+                            image.Mutate(x => x.Resize(816, 1056));
+                        }
+                        else
+                        {
+                            float multi = 1056.0f / (float)image.Height;
+                            image.Mutate(x => x.Resize(Convert.ToInt32(multi * image.Width), 1056));
+                        }
                     }
                     else
                     {
-                        multiplier = (720.0f / (double)image.Width);
+                        if (!KeepAspect)
+                        {
+                            image.Mutate(x => x.Resize(1056, 816));
+                        }
+                        else
+                        {
+                            float multi = 1056.0f / (float)image.Width;
+                            image.Mutate(x => x.Resize(1056, Convert.ToInt32(multi * image.Height)));
+                        }
                     }
-                    resizeToPdf = false;
-                    image.Mutate(x => x.Resize(Convert.ToInt32(((double)image.Width * multiplier)), Convert.ToInt32(((double)image.Height * multiplier))));
                 }
+
+                ErrorMessage += $"DPI: {image.Metadata.HorizontalResolution} x {image.Metadata.VerticalResolution} ";
 
                 if (Normalize)
                 {
                     watch.Start();
                     image = await Task.Factory.StartNew(() => NormalizeImage(image, NormalizeFactor));
                     watch.Stop();
-                    ErrorMessage += "Normalize: " + watch.ElapsedMilliseconds.ToString() + "ms :: ";
+                    ErrorMessage += ":: Normalize: " + watch.ElapsedMilliseconds.ToString() + "ms ";
                     watch.Reset();
 
                     if (ShowDebug)
@@ -382,7 +398,7 @@ namespace ColorByNumber.Pages
                 watch.Start();
                 image = await Task.Factory.StartNew(() => ProcessImage(image));
                 watch.Stop();
-                ErrorMessage += "Process: " + watch.ElapsedMilliseconds.ToString() + "ms :: ";
+                ErrorMessage += ":: Process: " + watch.ElapsedMilliseconds.ToString() + "ms ";
                 watch.Reset();
 
                 if (!Clean || ShowDebug)
@@ -400,7 +416,7 @@ namespace ColorByNumber.Pages
                     watch.Start();
                     image = await Task.Factory.StartNew(() => CleanImage(image));
                     watch.Stop();
-                    ErrorMessage += "Clean: " + watch.ElapsedMilliseconds.ToString() + "ms :: ";
+                    ErrorMessage += ":: Clean: " + watch.ElapsedMilliseconds.ToString() + "ms ";
                     watch.Reset();
 
                     using (var cleanedStream = new MemoryStream())
@@ -414,7 +430,7 @@ namespace ColorByNumber.Pages
                 watch.Start();
                 var outline = await Task.Factory.StartNew(() => GetOutlines(image));
                 watch.Stop();
-                ErrorMessage += "Outline: " + watch.ElapsedMilliseconds.ToString() + "ms :: ";
+                ErrorMessage += ":: Outline: " + watch.ElapsedMilliseconds.ToString() + "ms ";
                 watch.Reset();
 
                 if (!QuickNumbering)
@@ -422,7 +438,7 @@ namespace ColorByNumber.Pages
                     watch.Start();
                     outline = await Task.Factory.StartNew(() => GetRegions(image, outline));
                     watch.Stop();
-                    ErrorMessage += "Regions: " + watch.ElapsedMilliseconds.ToString() + "ms :: ";
+                    ErrorMessage += ":: Regions: " + watch.ElapsedMilliseconds.ToString() + "ms ";
                     watch.Reset();
                 }
 
@@ -434,21 +450,45 @@ namespace ColorByNumber.Pages
                     OutlineBytes = outlineStream.ToArray();
                 }
 
-                if (resizeToPdf)
+                if (Resize)
                 {
-                    if (outline.Height > outline.Width)
+                    if (outline.Width > outline.Height)
                     {
-                        double multiplier = (720.0f / (double)outline.Height);
-                        outline.Mutate(x => x.Resize(Convert.ToInt32(((double)outline.Width * multiplier)), Convert.ToInt32(((double)outline.Height * multiplier))));
-                        image.Mutate(x => x.Resize(Convert.ToInt32(((double)image.Width * multiplier)), Convert.ToInt32(((double)image.Height * multiplier))));
-
+                        outline.Mutate(y => y.Rotate(90.0f));
+                        image.Mutate(y => y.Rotate(90.0f));
+                    }
+                }
+                else
+                {
+                    if (image.Height >= image.Width)
+                    {
+                        if (!KeepAspect)
+                        {
+                            image.Mutate(x => x.Resize(816, 1056));
+                            outline.Mutate(x => x.Resize(816, 1056));
+                        }
+                        else
+                        {
+                            float multi = 1056.0f / (float)image.Height;
+                            image.Mutate(x => x.Resize(Convert.ToInt32(multi * image.Width), 1056));
+                            outline.Mutate(x => x.Resize(Convert.ToInt32(multi * image.Width), 1056));
+                        }
                     }
                     else
                     {
-                        double multiplier = (720.0f / (double)outline.Width);
-                        outline.Mutate(x => x.Resize(Convert.ToInt32(((double)outline.Width * multiplier)), Convert.ToInt32(((double)outline.Height * multiplier))));
+                        if (!KeepAspect)
+                        {
+                            image.Mutate(x => x.Resize(1056, 816));
+                            outline.Mutate(x => x.Resize(1056, 816));
+                        }
+                        else
+                        {
+                            float multi = 1056.0f / (float)image.Width;
+                            image.Mutate(x => x.Resize(1056, Convert.ToInt32(multi * image.Height)));
+                            outline.Mutate(x => x.Resize(1056, Convert.ToInt32(multi * image.Height)));
+                        }
+
                         outline.Mutate(y => y.Rotate(90.0f));
-                        image.Mutate(x => x.Resize(Convert.ToInt32(((double)image.Width * multiplier)), Convert.ToInt32(((double)image.Height * multiplier))));
                         image.Mutate(y => y.Rotate(90.0f));
                     }
                 }
@@ -458,6 +498,7 @@ namespace ColorByNumber.Pages
                 using (var resizeStream = new MemoryStream())
                 {
                     outline.SaveAsPng(resizeStream);
+                    var meta = outline.Metadata;
                     resizedOutline = resizeStream.ToArray();
                 }
 
@@ -480,12 +521,20 @@ namespace ColorByNumber.Pages
                 PdfPage page = document.AddPage();
                 XGraphics gfx = XGraphics.FromPdfPage(page);
                 XImage xImage = XImage.FromStream(() => new MemoryStream(resizedOutline));
-                gfx.DrawImage(xImage, 45, 45);
+
+                if (KeepAspect)
+                    gfx.DrawImage(xImage, (gfx.PageSize.Width - xImage.Size.Width) >= 100 ? 50 : 0, 0, xImage.Size.Width, gfx.PageSize.Height);
+                else
+                    gfx.DrawImage(xImage, 0, 0, gfx.PageSize.Width, gfx.PageSize.Height);
 
                 PdfPage imagePage = document.AddPage();
                 XGraphics imagegfx = XGraphics.FromPdfPage(imagePage);
                 XImage imagexImage = XImage.FromStream(() => new MemoryStream(resizedPBN));
-                imagegfx.DrawImage(imagexImage, 45, 45);
+
+                if (KeepAspect)
+                    imagegfx.DrawImage(imagexImage, (gfx.PageSize.Width - xImage.Size.Width) >= 100 ? 50 : 0, 0, imagexImage.Size.Width, gfx.PageSize.Height);
+                else
+                    imagegfx.DrawImage(imagexImage, 0, 0, imagegfx.PageSize.Width, imagegfx.PageSize.Height);
 
                 using (var pdfStream = new MemoryStream())
                 {
@@ -582,7 +631,7 @@ namespace ColorByNumber.Pages
         {
             Image<Rgba32> processedImage = new Image<Rgba32>(image.Width, image.Height);
             CIELab[] pixels = new CIELab[image.Width * image.Height];
-            ConcurrentDictionary<CIELab, int> colorCount = new ConcurrentDictionary<CIELab, int>();
+            ConcurrentDictionary<Rgba32, int> colorCount = new ConcurrentDictionary<Rgba32, int>();
             Parallel.For(0, image.Height, y =>
             {
                 for (int x = 0; x < image.Width; x++)
@@ -590,16 +639,18 @@ namespace ColorByNumber.Pages
                     CIELab pixel = new CIELab(image[x, y]);
                     pixels[x + (y * image.Width)] = pixel;
 
-                    colorCount.AddOrUpdate(pixel, 1, (key, oldValue) => oldValue + 1);
+                    colorCount.AddOrUpdate(image[x, y], 1, (key, oldValue) => oldValue + 1);
                 }
             });
 
+            var colorDesc = colorCount.OrderByDescending(a => a.Value).ToList();
             foreach (var color in colorCount.OrderByDescending(a => a.Value).Select(b => b.Key))
             {
                 bool found = false;
+                CIELab pixel = new CIELab(color);
                 for (int i = 0; i < TopColors.Count; i++)
                 {
-                    if (DistanceBetweenColors(color, TopColors[i]) < SimilarityDistance)
+                    if (DistanceBetweenColors(pixel, TopColors[i]) < SimilarityDistance)
                     {
                         found = true;
                         break;
@@ -607,7 +658,7 @@ namespace ColorByNumber.Pages
                 }
 
                 if (!found)
-                    TopColors.Add(color);
+                    TopColors.Add(pixel);
             }
 
             if (TopColors.Count > ColorCount)
